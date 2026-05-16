@@ -1,6 +1,19 @@
 {
   "name": "productbuilders-app",
+  "main": ".open-next/worker.js",
   "compatibility_date": "2025-04-01",
   "compatibility_flags": ["nodejs_compat"],
-  "pages_build_output_dir": ".open-next/cloudflare"
+  "assets": {
+    "directory": ".open-next/assets"
+  },
+  "routes": [
+    {
+      "pattern": "productbuilders.app/*",
+      "zone_name": "productbuilders.app"
+    },
+    {
+      "pattern": "www.productbuilders.app/*",
+      "zone_name": "productbuilders.app"
+    }
+  ]
 }
