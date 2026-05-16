@@ -62,8 +62,8 @@ export default async function HomePage({ searchParams }: Props) {
           <span className="text-persimmon">building?</span>
         </h1>
         <p className="mx-auto mt-4 max-w-lg text-lg text-ink-muted">
-          Share what you&apos;re working on, get honest feedback from fellow
-          builders, and discover cool projects every week.
+          Submit your project, get votes from the community, and the
+          top 3 each week demo live on stream — then it stays on YouTube forever.
         </p>
         <div className="mt-6 flex justify-center gap-3">
           <Link
