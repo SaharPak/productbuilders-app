@@ -1,0 +1,17 @@
+{
+  "/(auth)/login/page": "app/(auth)/login/page.js",
+  "/_global-error/page": "app/_global-error/page.js",
+  "/_not-found/page": "app/_not-found/page.js",
+  "/admin/page": "app/admin/page.js",
+  "/api/cron/demo-day/route": "app/api/cron/demo-day/route.js",
+  "/auth/callback/route": "app/auth/callback/route.js",
+  "/demo-days/page": "app/demo-days/page.js",
+  "/favicon.ico/route": "app/favicon.ico/route.js",
+  "/leaderboard/page": "app/leaderboard/page.js",
+  "/onboarding/page": "app/onboarding/page.js",
+  "/p/[id]/page": "app/p/[id]/page.js",
+  "/page": "app/page.js",
+  "/settings/page": "app/settings/page.js",
+  "/submit/page": "app/submit/page.js",
+  "/u/[handle]/page": "app/u/[handle]/page.js"
+}
