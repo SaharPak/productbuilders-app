@@ -63,7 +63,7 @@ export default async function HomePage({ searchParams }: Props) {
         </h1>
         <p className="mx-auto mt-4 max-w-lg text-lg text-ink-muted">
           Submit your project, get votes from the community, and the
-          top 3 each week demo live on stream — then it stays on YouTube forever.
+          top 3 each week demo live on stream.
         </p>
         <div className="mt-6 flex justify-center gap-3">
           <Link
