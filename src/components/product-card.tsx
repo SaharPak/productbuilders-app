@@ -1,0 +1,64 @@
+"use client";
+
+import Link from "next/link";
+import { VoteButton } from "./vote-button";
+import { StageDot } from "./stage-dot";
+import type { ProductWithCounts } from "@/types/database";
+
+interface ProductCardProps {
+  product: ProductWithCounts;
+  rank?: number;
+}
+
+export function ProductCard({ product, rank }: ProductCardProps) {
+  const builder =
+    typeof product.builder === "string"
+      ? JSON.parse(product.builder)
+      : product.builder;
+
+  return (
+    <div className="group flex items-start gap-4 rounded-2xl border border-border bg-card-bg p-4 transition-all hover:border-border-strong hover:scale-[1.01] active:scale-[0.99]">
+      {rank != null && (
+        <span className="flex-none font-mono text-2xl font-medium text-ink-faint tabular-nums">
+          {rank}
+        </span>
+      )}
+
+      <div className="min-w-0 flex-1">
+        <Link href={`/p/${product.id}`} className="block">
+          <h3 className="font-display text-lg font-bold text-ink leading-snug">
+            {product.name}
+          </h3>
+          <p className="mt-0.5 text-sm text-ink-muted line-clamp-2">
+            {product.tagline}
+          </p>
+        </Link>
+
+        <div className="mt-2.5 flex flex-wrap items-center gap-2 text-xs">
+          <StageDot stage={product.stage} />
+          <span className="rounded-md border border-border px-1.5 py-0.5 font-mono text-ink-faint">
+            {product.category}
+          </span>
+          {builder?.handle && (
+            <Link
+              href={`/u/${builder.handle}`}
+              className="text-ink-faint transition-colors hover:text-persimmon"
+            >
+              @{builder.handle}
+            </Link>
+          )}
+          <span className="text-ink-faint">
+            {product.comment_count} comment
+            {product.comment_count !== 1 ? "s" : ""}
+          </span>
+        </div>
+      </div>
+
+      <VoteButton
+        productId={product.id}
+        initialCount={product.vote_count}
+        initialVoted={product.user_has_voted ?? false}
+      />
+    </div>
+  );
+}
