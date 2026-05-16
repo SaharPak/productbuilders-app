@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { isMockMode } from "@/lib/mock-data";
 
 interface VoteButtonProps {
   productId: string;
@@ -17,13 +18,18 @@ export function VoteButton({
   const [voted, setVoted] = useState(initialVoted);
   const [count, setCount] = useState(initialCount);
   const [isPending, startTransition] = useTransition();
-  const supabase = createClient();
+  const mock = isMockMode();
 
   function handleVote() {
+    if (mock) {
+      setVoted((v) => !v);
+      setCount((c) => (voted ? c - 1 : c + 1));
+      return;
+    }
+
     startTransition(async () => {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
+      const supabase = createClient();
+      const { data: { user } } = await supabase.auth.getUser();
 
       if (!user) {
         window.location.href = `/login?redirect=${encodeURIComponent(window.location.pathname)}`;
@@ -58,7 +64,7 @@ export function VoteButton({
       disabled={isPending}
       className={`flex flex-none flex-col items-center gap-0.5 rounded-xl border px-3 py-2 text-xs transition-all ${
         voted
-          ? "border-persimmon/30 bg-persimmon-light text-persimmon"
+          ? "border-sage/30 bg-sage-light text-sage"
           : "border-border bg-paper-bg text-ink-faint hover:border-border-strong hover:text-ink-muted"
       }`}
     >

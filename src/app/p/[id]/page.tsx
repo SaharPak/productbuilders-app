@@ -1,34 +1,25 @@
 import Link from "next/link";
 import Image from "next/image";
 import { notFound } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
 import { VoteButton } from "@/components/vote-button";
 import { StageDot } from "@/components/stage-dot";
 import { CommentSection } from "@/components/comment-section";
+import { isMockMode, MOCK_PRODUCTS, MOCK_COMMENTS } from "@/lib/mock-data";
+import type { ProductWithCounts } from "@/types/database";
 import type { Metadata } from "next";
 
 interface Props {
   params: Promise<{ id: string }>;
 }
 
-export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const { id } = await params;
-  const supabase = await createClient();
-  const { data } = await supabase
-    .from("products")
-    .select("name, tagline")
-    .eq("id", id)
-    .single();
+async function getProduct(id: string) {
+  if (isMockMode()) {
+    const product = MOCK_PRODUCTS.find((p) => p.id === id);
+    const comments = MOCK_COMMENTS[id] ?? [];
+    return { product: product ?? null, userHasVoted: product?.user_has_voted ?? false, comments };
+  }
 
-  if (!data) return { title: "Product not found" };
-  return {
-    title: data.name,
-    description: data.tagline,
-  };
-}
-
-export default async function ProductPage({ params }: Props) {
-  const { id } = await params;
+  const { createClient } = await import("@/lib/supabase/server");
   const supabase = await createClient();
 
   const { data: product } = await supabase
@@ -37,11 +28,7 @@ export default async function ProductPage({ params }: Props) {
     .eq("id", id)
     .single();
 
-  if (!product) notFound();
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { data: { user } } = await supabase.auth.getUser();
 
   let userHasVoted = false;
   if (user) {
@@ -54,31 +41,56 @@ export default async function ProductPage({ params }: Props) {
     userHasVoted = !!vote;
   }
 
+  return { product, userHasVoted, comments: [] };
+}
+
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { id } = await params;
+  if (isMockMode()) {
+    const product = MOCK_PRODUCTS.find((p) => p.id === id);
+    if (!product) return { title: "Product not found" };
+    return { title: product.name, description: product.tagline };
+  }
+
+  const { createClient } = await import("@/lib/supabase/server");
+  const supabase = await createClient();
+  const { data } = await supabase.from("products").select("name, tagline").eq("id", id).single();
+  if (!data) return { title: "Product not found" };
+  return { title: data.name, description: data.tagline };
+}
+
+export default async function ProductPage({ params }: Props) {
+  const { id } = await params;
+  const { product, userHasVoted, comments } = await getProduct(id);
+
+  if (!product) notFound();
+
+  const typedProduct = product as ProductWithCounts;
   const builder =
-    typeof product.builder === "string"
-      ? JSON.parse(product.builder)
-      : product.builder;
+    typeof typedProduct.builder === "string"
+      ? JSON.parse(typedProduct.builder)
+      : typedProduct.builder;
 
   return (
     <div className="mx-auto max-w-2xl px-4 pt-24 pb-16 sm:px-6">
       <div className="flex items-start justify-between gap-4">
         <div className="min-w-0 flex-1">
           <h1 className="font-display text-3xl font-black text-ink sm:text-4xl">
-            {product.name}
+            {typedProduct.name}
           </h1>
-          <p className="mt-2 text-lg text-ink-muted">{product.tagline}</p>
+          <p className="mt-2 text-lg text-ink-muted">{typedProduct.tagline}</p>
         </div>
         <VoteButton
-          productId={product.id}
-          initialCount={product.vote_count}
+          productId={typedProduct.id}
+          initialCount={typedProduct.vote_count}
           initialVoted={userHasVoted}
         />
       </div>
 
       <div className="mt-4 flex flex-wrap items-center gap-3">
-        <StageDot stage={product.stage} />
+        <StageDot stage={typedProduct.stage} />
         <span className="rounded-md border border-border px-2 py-0.5 font-mono text-xs text-ink-faint">
-          {product.category}
+          {typedProduct.category}
         </span>
         {builder?.handle && (
           <Link
@@ -88,9 +100,9 @@ export default async function ProductPage({ params }: Props) {
             by <span className="font-medium">@{builder.handle}</span>
           </Link>
         )}
-        {product.url && (
+        {typedProduct.url && (
           <a
-            href={product.url}
+            href={typedProduct.url}
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center gap-1 rounded-full border border-border px-3 py-1 text-xs font-medium text-ink-muted transition-all hover:border-border-strong hover:text-ink"
@@ -100,11 +112,11 @@ export default async function ProductPage({ params }: Props) {
         )}
       </div>
 
-      {product.image_url && (
+      {typedProduct.image_url && (
         <div className="mt-6 overflow-hidden rounded-2xl border border-border">
           <Image
-            src={product.image_url}
-            alt={product.name}
+            src={typedProduct.image_url}
+            alt={typedProduct.name}
             width={800}
             height={400}
             className="w-full object-cover"
@@ -112,17 +124,17 @@ export default async function ProductPage({ params }: Props) {
         </div>
       )}
 
-      {product.description && (
+      {typedProduct.description && (
         <div className="mt-6">
           <p className="whitespace-pre-wrap text-sm leading-relaxed text-ink-soft">
-            {product.description}
+            {typedProduct.description}
           </p>
         </div>
       )}
 
       <hr className="my-8 border-border" />
 
-      <CommentSection productId={product.id} />
+      <CommentSection productId={typedProduct.id} mockComments={comments} />
     </div>
   );
 }
