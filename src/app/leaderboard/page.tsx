@@ -5,8 +5,8 @@ import type { ProductWithCounts } from "@/types/database";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Leaderboard",
-  description: "The top products this week. Top 3 demo live every Friday.",
+  title: "This Week's Favorites",
+  description: "The most-loved projects this week. Top 3 get to demo live every Friday.",
 };
 
 export default async function LeaderboardPage() {
@@ -45,17 +45,17 @@ export default async function LeaderboardPage() {
   return (
     <div className="mx-auto max-w-3xl px-4 pt-24 pb-16 sm:px-6">
       <h1 className="font-display text-4xl font-black text-ink">
-        The Top Three
+        This week&apos;s favorites
       </h1>
       <DemoCountdownBanner />
 
       {top3.length === 0 ? (
         <div className="mt-8 rounded-2xl border border-dashed border-border py-16 text-center">
           <p className="font-display text-xl font-bold text-ink">
-            No products yet this week
+            Nothing here yet this week
           </p>
           <p className="mt-2 text-sm text-ink-muted">
-            Submit yours to claim the top spot.
+            Be the first to share something — every project starts somewhere.
           </p>
         </div>
       ) : (
@@ -81,9 +81,9 @@ export default async function LeaderboardPage() {
                   }`}
                 >
                   <span
-                    className={`font-mono text-3xl font-bold ${isFirst ? "text-persimmon" : "text-ink-faint"}`}
+                    className={`text-2xl ${isFirst ? "" : "opacity-60"}`}
                   >
-                    #{idx + 1}
+                    {idx === 0 ? "🏅" : idx === 1 ? "✨" : "💡"}
                   </span>
                   <h3
                     className={`mt-2 font-display text-lg font-bold ${isFirst ? "text-paper-bg" : "text-ink"}`}
@@ -103,14 +103,9 @@ export default async function LeaderboardPage() {
                     </p>
                   )}
                   <p
-                    className={`mt-3 font-mono text-xl font-bold ${isFirst ? "text-persimmon" : "text-ink"}`}
+                    className={`mt-3 text-sm ${isFirst ? "text-paper-bg/60" : "text-ink-faint"}`}
                   >
-                    {product.vote_count}
-                    <span
-                      className={`ml-1 text-xs font-normal ${isFirst ? "text-paper-bg/50" : "text-ink-faint"}`}
-                    >
-                      votes
-                    </span>
+                    ❤️ {product.vote_count} likes
                   </p>
                 </div>
               );

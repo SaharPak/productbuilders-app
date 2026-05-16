@@ -98,10 +98,10 @@ export default function SubmitPage() {
   return (
     <div className="mx-auto max-w-lg px-4 pt-24 pb-16 sm:px-6">
       <h1 className="font-display text-3xl font-black text-ink">
-        Submit your product
+        Share what you&apos;re building
       </h1>
       <p className="mt-2 text-sm text-ink-muted">
-        The best submissions are honest about where they are.
+        It doesn&apos;t have to be perfect — ideas and early prototypes are welcome.
       </p>
 
       <form onSubmit={handleSubmit} className="mt-8 space-y-6">
@@ -240,7 +240,7 @@ export default function SubmitPage() {
           disabled={loading || !name.trim() || !tagline.trim()}
           className="w-full rounded-xl bg-persimmon px-4 py-3 text-sm font-semibold text-white transition-all hover:scale-[1.01] hover:bg-persimmon-hover active:scale-[0.99] disabled:opacity-50"
         >
-          {loading ? "Submitting..." : "Submit product"}
+          {loading ? "Sharing..." : "Share project"}
         </button>
       </form>
     </div>

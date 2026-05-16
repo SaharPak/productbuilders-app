@@ -118,7 +118,7 @@ export default function LoginPage() {
     <div className="mx-auto flex min-h-[70vh] max-w-sm flex-col items-center justify-center px-4 pt-20">
       <h1 className="font-display text-3xl font-black text-ink">Sign in</h1>
       <p className="mt-2 text-center text-sm text-ink-muted">
-        Join Product Builders to submit, vote, and comment.
+        Join to share your projects, give feedback, and discover what others are building.
       </p>
       <Suspense
         fallback={

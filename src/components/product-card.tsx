@@ -17,13 +17,7 @@ export function ProductCard({ product, rank }: ProductCardProps) {
       : product.builder;
 
   return (
-    <div className="group flex items-start gap-4 rounded-2xl border border-border bg-card-bg p-4 transition-all hover:border-border-strong hover:scale-[1.01] active:scale-[0.99]">
-      {rank != null && (
-        <span className="flex-none font-mono text-2xl font-medium text-ink-faint tabular-nums">
-          {rank}
-        </span>
-      )}
-
+    <div className="group flex items-start gap-4 rounded-2xl border border-border bg-card-bg p-4 transition-all hover:border-border-strong">
       <div className="min-w-0 flex-1">
         <Link href={`/p/${product.id}`} className="block">
           <h3 className="font-display text-lg font-bold text-ink leading-snug">
@@ -47,10 +41,11 @@ export function ProductCard({ product, rank }: ProductCardProps) {
               @{builder.handle}
             </Link>
           )}
-          <span className="text-ink-faint">
-            {product.comment_count} comment
-            {product.comment_count !== 1 ? "s" : ""}
-          </span>
+          {product.comment_count > 0 && (
+            <span className="text-ink-faint">
+              💬 {product.comment_count}
+            </span>
+          )}
         </div>
       </div>
 

@@ -67,7 +67,7 @@ export function Navbar() {
             href="/leaderboard"
             className="text-sm font-medium text-ink-muted transition-colors hover:text-ink"
           >
-            Leaderboard
+            Favorites
           </Link>
           <Link
             href="/demo-days"
@@ -84,7 +84,7 @@ export function Navbar() {
                 href="/submit"
                 className="rounded-full bg-persimmon px-4 py-1.5 text-sm font-semibold text-white transition-all hover:scale-[1.02] hover:bg-persimmon-hover active:scale-[0.98]"
               >
-                Submit
+                Share
               </Link>
               <Link
                 href={user.handle ? `/u/${user.handle}` : "/settings"}

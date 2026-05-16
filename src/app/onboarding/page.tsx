@@ -55,10 +55,10 @@ export default function OnboardingPage() {
   return (
     <div className="mx-auto flex min-h-[70vh] max-w-sm flex-col items-center justify-center px-4 pt-20">
       <h1 className="font-display text-3xl font-black text-ink">
-        Welcome, builder
+        Hey, welcome 👋
       </h1>
       <p className="mt-2 text-center text-sm text-ink-muted">
-        Set up your profile before you can submit or comment.
+        Quick setup — just a name and a handle so people know who you are.
       </p>
 
       <form onSubmit={handleSubmit} className="mt-8 w-full space-y-4">
@@ -105,7 +105,7 @@ export default function OnboardingPage() {
           disabled={loading}
           className="w-full rounded-xl bg-persimmon px-4 py-3 text-sm font-semibold text-white transition-all hover:scale-[1.01] hover:bg-persimmon-hover active:scale-[0.99] disabled:opacity-50"
         >
-          {loading ? "Saving..." : "Start building"}
+          {loading ? "Saving..." : "Let's go"}
         </button>
       </form>
     </div>
