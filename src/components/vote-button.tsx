@@ -6,12 +6,14 @@ import { isMockMode } from "@/lib/mock-data";
 
 interface VoteButtonProps {
   productId: string;
+  productName: string;
   initialCount: number;
   initialVoted: boolean;
 }
 
 export function VoteButton({
   productId,
+  productName,
   initialCount,
   initialVoted,
 }: VoteButtonProps) {
@@ -19,6 +21,9 @@ export function VoteButton({
   const [count, setCount] = useState(initialCount);
   const [isPending, startTransition] = useTransition();
   const mock = isMockMode();
+  const voteLabel = `${voted ? "Remove vote from" : "Vote for"} ${productName}. ${count} ${
+    count === 1 ? "vote" : "votes"
+  }`;
 
   function handleVote() {
     if (mock) {
@@ -62,6 +67,8 @@ export function VoteButton({
     <button
       onClick={handleVote}
       disabled={isPending}
+      aria-label={voteLabel}
+      aria-pressed={voted}
       className={`flex flex-none flex-col items-center gap-0.5 rounded-xl border px-3 py-2 text-xs transition-all ${
         voted
           ? "border-sage/30 bg-sage-light text-sage"
