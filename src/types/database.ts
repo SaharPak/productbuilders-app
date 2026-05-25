@@ -35,10 +35,12 @@ export interface Product {
   created_at: string;
 }
 
+export type ProductBuilder = Pick<Profile, "display_name" | "handle" | "avatar_url">;
+
 export interface ProductWithCounts extends Product {
   vote_count: number;
   comment_count: number;
-  builder: Pick<Profile, "display_name" | "handle" | "avatar_url">;
+  builder: ProductBuilder | string;
   user_has_voted?: boolean;
 }
 
