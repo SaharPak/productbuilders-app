@@ -1,9 +1,7 @@
 import {
   startOfWeek,
-  endOfWeek,
   nextFriday,
   isFriday,
-  isAfter,
   format,
   differenceInSeconds,
 } from "date-fns";
