@@ -9,10 +9,19 @@ import { TZDate } from "@date-fns/tz";
 
 const TZ = "Europe/Helsinki";
 
+/**
+ * Returns the current instant projected into Helsinki time, which anchors demo
+ * deadlines and weekly submission windows.
+ */
 export function helsinkiNow(): Date {
   return new TZDate(new Date(), TZ);
 }
 
+/**
+ * Returns the Monday date that identifies the active Product Builders week.
+ * Weekend submissions are assigned to the upcoming week because demo weeks close
+ * on Friday at 18:00 Helsinki time.
+ */
 export function currentWeekOf(): string {
   const now = helsinkiNow();
   const day = now.getDay();
@@ -27,6 +36,9 @@ export function currentWeekOf(): string {
   return format(startOfWeek(now, { weekStartsOn: 1 }), "yyyy-MM-dd");
 }
 
+/**
+ * Returns the next Friday 18:00 Helsinki demo deadline.
+ */
 export function nextDemoDate(): Date {
   const now = helsinkiNow();
   if (isFriday(now) && now.getHours() < 18) {
@@ -39,10 +51,16 @@ export function nextDemoDate(): Date {
   return fri;
 }
 
+/**
+ * Returns the number of seconds remaining until the next demo deadline.
+ */
 export function secondsUntilDemo(): number {
   return Math.max(0, differenceInSeconds(nextDemoDate(), helsinkiNow()));
 }
 
+/**
+ * Returns true after the Friday 18:00 Helsinki demo cutoff has passed.
+ */
 export function isDemoDay(): boolean {
   const now = helsinkiNow();
   return isFriday(now) && now.getHours() >= 18;
