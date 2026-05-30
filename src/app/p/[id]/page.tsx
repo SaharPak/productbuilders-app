@@ -82,6 +82,7 @@ export default async function ProductPage({ params }: Props) {
         </div>
         <VoteButton
           productId={typedProduct.id}
+          productName={typedProduct.name}
           initialCount={typedProduct.vote_count}
           initialVoted={userHasVoted}
         />
