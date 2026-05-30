@@ -13,6 +13,12 @@ export function helsinkiNow(): Date {
   return new TZDate(new Date(), TZ);
 }
 
+/**
+ * Returns the Monday date key for the submission week in Helsinki time.
+ *
+ * Weeks close on Friday at 18:00; weekend submissions are grouped into the
+ * following week's Monday bucket so upcoming products appear in the next demo.
+ */
 export function currentWeekOf(): string {
   const now = helsinkiNow();
   const day = now.getDay();
