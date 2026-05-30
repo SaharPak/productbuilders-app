@@ -13,6 +13,10 @@ export function helsinkiNow(): Date {
   return new TZDate(new Date(), TZ);
 }
 
+/**
+ * Returns the Monday date key for the active Helsinki submission week.
+ * Weekend submissions roll into the upcoming week for the next Friday demo.
+ */
 export function currentWeekOf(): string {
   const now = helsinkiNow();
   const day = now.getDay();
