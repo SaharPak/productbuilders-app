@@ -119,7 +119,11 @@ export function CommentSection({ productId, mockComments }: Props) {
       </div>
 
       <form onSubmit={handleSubmit} className="mt-6">
+        <label htmlFor="comment-body" className="sr-only">
+          Add a comment
+        </label>
         <textarea
+          id="comment-body"
           value={body}
           onChange={(e) => setBody(e.target.value)}
           placeholder="Share your thoughts..."
