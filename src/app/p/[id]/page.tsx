@@ -5,7 +5,7 @@ import { VoteButton } from "@/components/vote-button";
 import { StageDot } from "@/components/stage-dot";
 import { CommentSection } from "@/components/comment-section";
 import { isMockMode, MOCK_PRODUCTS, MOCK_COMMENTS } from "@/lib/mock-data";
-import type { ProductWithCounts } from "@/types/database";
+import type { ProductBuilder, ProductWithCounts } from "@/types/database";
 import type { Metadata } from "next";
 
 interface Props {
@@ -44,6 +44,16 @@ async function getProduct(id: string) {
   return { product, userHasVoted, comments: [] };
 }
 
+function parseBuilder(builder: ProductWithCounts["builder"]): ProductBuilder | null {
+  if (typeof builder !== "string") return builder;
+
+  try {
+    return JSON.parse(builder) as ProductBuilder;
+  } catch {
+    return null;
+  }
+}
+
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { id } = await params;
   if (isMockMode()) {
@@ -66,10 +76,7 @@ export default async function ProductPage({ params }: Props) {
   if (!product) notFound();
 
   const typedProduct = product as ProductWithCounts;
-  const builder =
-    typeof typedProduct.builder === "string"
-      ? JSON.parse(typedProduct.builder)
-      : typedProduct.builder;
+  const builder = parseBuilder(typedProduct.builder);
 
   return (
     <div className="mx-auto max-w-2xl px-4 pt-24 pb-16 sm:px-6">
