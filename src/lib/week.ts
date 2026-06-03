@@ -31,6 +31,10 @@ export function currentWeekOf(): string {
   return format(startOfWeek(now, { weekStartsOn: 1 }), "yyyy-MM-dd");
 }
 
+/**
+ * Returns the next Friday 18:00 Helsinki demo cutoff.
+ * Before that hour on Friday, the current day is still the next demo.
+ */
 export function nextDemoDate(): Date {
   const now = helsinkiNow();
   if (isFriday(now) && now.getHours() < 18) {
