@@ -36,6 +36,7 @@ export interface Product {
 }
 
 export type ProductBuilder = Pick<Profile, "display_name" | "handle" | "avatar_url">;
+export type CommentAuthor = Pick<Profile, "display_name" | "handle" | "avatar_url">;
 
 export interface ProductWithCounts extends Product {
   vote_count: number;
@@ -57,7 +58,7 @@ export interface Comment {
   body: string;
   status: CommentStatus;
   created_at: string;
-  author?: Pick<Profile, "display_name" | "handle" | "avatar_url">;
+  author?: CommentAuthor;
 }
 
 export interface DemoDay {
