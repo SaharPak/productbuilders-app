@@ -88,6 +88,9 @@ export function Navbar() {
               </Link>
               <Link
                 href={user.handle ? `/u/${user.handle}` : "/settings"}
+                aria-label={
+                  user.handle ? `View @${user.handle} profile` : "Open profile settings"
+                }
                 className="flex h-8 w-8 items-center justify-center rounded-full bg-paper-bg-deep text-xs font-semibold text-ink-muted transition-colors hover:bg-border-strong"
               >
                 {user.display_name?.charAt(0).toUpperCase() ?? "?"}
