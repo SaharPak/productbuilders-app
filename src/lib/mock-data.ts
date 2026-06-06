@@ -206,6 +206,9 @@ export const MOCK_COMMENTS: Record<string, Comment[]> = {
   ],
 };
 
+/**
+ * Enables local demo data when Supabase env vars are absent or still placeholders.
+ */
 export function isMockMode(): boolean {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
   return !url || url.includes("placeholder") || url.includes("example");
