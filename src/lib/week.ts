@@ -47,6 +47,9 @@ export function nextDemoDate(): Date {
   return fri;
 }
 
+/**
+ * Returns the non-negative countdown from now to the next Helsinki demo cutoff.
+ */
 export function secondsUntilDemo(): number {
   return Math.max(0, differenceInSeconds(nextDemoDate(), helsinkiNow()));
 }
