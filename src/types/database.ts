@@ -76,3 +76,9 @@ export interface DemoDayWinner {
   vote_count: number;
   product?: ProductWithCounts;
 }
+
+export type DemoDayWinnerProduct = Pick<Product, "id" | "name" | "tagline">;
+
+export type DemoDayWinnerWithProduct = Omit<DemoDayWinner, "product"> & {
+  product: DemoDayWinnerProduct | null;
+};
