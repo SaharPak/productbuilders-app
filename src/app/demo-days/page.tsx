@@ -2,6 +2,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { format } from "date-fns";
 import type { Metadata } from "next";
+import type { DemoDayWinnerWithProduct } from "@/types/database";
 
 export const metadata: Metadata = {
   title: "Demo Days Archive",
@@ -17,13 +18,14 @@ export default async function DemoDaysPage() {
     .eq("status", "completed")
     .order("week_of", { ascending: false });
 
-  const { data: winners } = await supabase
+  const { data: winnersData } = await supabase
     .from("demo_day_winners")
     .select("*, product:products(name, tagline, id)")
     .order("rank", { ascending: true });
+  const winners = (winnersData ?? []) as DemoDayWinnerWithProduct[];
 
-  const winnersMap = new Map<string, typeof winners>();
-  winners?.forEach((w) => {
+  const winnersMap = new Map<string, DemoDayWinnerWithProduct[]>();
+  winners.forEach((w) => {
     const existing = winnersMap.get(w.week_of) ?? [];
     existing.push(w);
     winnersMap.set(w.week_of, existing);
@@ -79,7 +81,7 @@ export default async function DemoDaysPage() {
 
                 {weekWinners.length > 0 && (
                   <div className="mt-4 space-y-2">
-                    {weekWinners.map((w: { rank: number; vote_count: number; product: { id: string; name: string; tagline: string } | null }) => (
+                    {weekWinners.map((w) => (
                       <div
                         key={w.rank}
                         className="flex items-center gap-3 rounded-xl bg-paper-bg p-3"
