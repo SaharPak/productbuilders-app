@@ -16,7 +16,10 @@ export function DemoCountdownPill() {
   if (isDemoDay()) {
     return (
       <span className="inline-flex items-center gap-1.5 rounded-full bg-persimmon-light px-3 py-1 font-mono text-xs text-persimmon">
-        <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-persimmon" />
+        <span
+          aria-hidden="true"
+          className="h-1.5 w-1.5 animate-pulse rounded-full bg-persimmon"
+        />
         Demo day is live
       </span>
     );
@@ -37,7 +40,7 @@ export function DemoCountdownPill() {
 
   return (
     <span className="hidden items-center gap-1.5 rounded-full border border-border px-3 py-1 font-mono text-xs text-ink-faint sm:inline-flex">
-      <span className="h-1.5 w-1.5 rounded-full bg-stage-building" />
+      <span aria-hidden="true" className="h-1.5 w-1.5 rounded-full bg-stage-building" />
       {label}
     </span>
   );
