@@ -4,9 +4,20 @@ import { format } from "date-fns";
 import type { Metadata } from "next";
 import type { DemoDayWinnerWithProduct } from "@/types/database";
 
+const demoDaysDescription =
+  "Browse past Product Builders demo days, weekly winners, vote counts, and recordings.";
+
 export const metadata: Metadata = {
   title: "Demo Days Archive",
-  description: "Past demo days and their winners.",
+  description: demoDaysDescription,
+  alternates: {
+    canonical: "/demo-days",
+  },
+  openGraph: {
+    title: "Demo Days Archive",
+    description: demoDaysDescription,
+    url: "/demo-days",
+  },
 };
 
 export default async function DemoDaysPage() {
