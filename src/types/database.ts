@@ -9,6 +9,8 @@ export type Category =
 export type ProductStatus = "live" | "hidden" | "removed";
 export type CommentStatus = "live" | "hidden";
 export type DemoDayStatus = "upcoming" | "completed";
+export type DemoType = "live_demo" | "feedback_only";
+export type DemoLanguage = "farsi" | "english";
 
 export interface Profile {
   id: string;
@@ -32,6 +34,11 @@ export interface Product {
   stage: Stage;
   status: ProductStatus;
   week_of: string;
+  demo_type: DemoType;
+  demo_week: string | null;
+  demo_language: DemoLanguage | null;
+  problem: string | null;
+  audience: string | null;
   created_at: string;
 }
 
