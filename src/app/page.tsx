@@ -2,7 +2,7 @@ import Link from "next/link";
 import { ProductCard } from "@/components/product-card";
 import { BrowseTabs } from "@/components/browse-tabs";
 import { ShowcaseBanner } from "@/components/showcase-banner";
-import { isMockMode, MOCK_PRODUCTS } from "@/lib/mock-data";
+import { isMockMode, mockPublicProducts } from "@/lib/mock-data";
 import { currentWeekOf } from "@/lib/week";
 import type { ProductWithCounts } from "@/types/database";
 
@@ -12,7 +12,7 @@ interface Props {
 
 async function getProducts(sortMode: "hot" | "new"): Promise<ProductWithCounts[]> {
   if (isMockMode()) {
-    const sorted = [...MOCK_PRODUCTS];
+    const sorted = mockPublicProducts();
     if (sortMode === "new") {
       sorted.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
     } else {

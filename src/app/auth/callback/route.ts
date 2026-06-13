@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createServerClient, parseCookieHeader } from "@supabase/ssr";
 import type { CookieOptions } from "@supabase/ssr";
+import { promoteAdminIfAllowlisted } from "@/lib/admin";
 
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url);
@@ -47,18 +48,14 @@ export async function GET(request: Request) {
     const { data, error } =
       await supabase.auth.exchangeCodeForSession(code);
 
-    console.log(
-      "[auth/callback] exchange result:",
-      error ? `error=${error.message}` : "ok",
-      `cookies collected: ${collectedCookies.length}`,
-      `cookie names: [${collectedCookies.map((c) => c.name).join(", ")}]`
-    );
-
     if (!error && data.session) {
       const user = data.session.user;
       let redirectTo = `${origin}${redirect}`;
 
       if (user) {
+        // Promote trusted emails (ADMIN_EMAILS) to admin on sign-in.
+        await promoteAdminIfAllowlisted(user.id, user.email);
+
         const { data: profile } = await supabase
           .from("profiles")
           .select("handle")
@@ -80,11 +77,6 @@ export async function GET(request: Request) {
         response.cookies.set(name, value, options);
       }
 
-      console.log(
-        "[auth/callback] redirect to:",
-        redirectTo,
-        `Set-Cookie count: ${response.headers.getSetCookie().length}`
-      );
       return response;
     }
 

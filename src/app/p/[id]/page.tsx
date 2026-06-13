@@ -3,6 +3,7 @@ import Image from "next/image";
 import { notFound } from "next/navigation";
 import { VoteButton } from "@/components/vote-button";
 import { StageDot } from "@/components/stage-dot";
+import { StatusBadge } from "@/components/status-badge";
 import { CommentSection } from "@/components/comment-section";
 import { isMockMode, MOCK_PRODUCTS, MOCK_COMMENTS } from "@/lib/mock-data";
 import type { Comment, ProductBuilder, ProductWithCounts } from "@/types/database";
@@ -33,14 +34,55 @@ async function getProduct(id: string): Promise<ProductPageData> {
     .from("product_with_counts")
     .select("*")
     .eq("id", id)
-    .single();
-  const product = data as ProductWithCounts | null;
+    .maybeSingle();
+  let product = data as ProductWithCounts | null;
 
   const { data: { session } } = await supabase.auth.getSession();
   const user = session?.user ?? null;
 
+  // The public view only exposes approved (live) products. If a viewer is the
+  // owner or an admin, let them see their own pending/hidden/rejected product
+  // by reading the base table directly and assembling the counts.
+  if (!product && user) {
+    const { data: raw } = await supabase
+      .from("products")
+      .select(
+        "*, builder:profiles!builder_id(display_name, handle, avatar_url)"
+      )
+      .eq("id", id)
+      .maybeSingle();
+
+    if (raw) {
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("is_admin")
+        .eq("id", user.id)
+        .maybeSingle();
+      const isAdmin = !!profile?.is_admin;
+
+      if (raw.builder_id === user.id || isAdmin) {
+        const [{ count: voteCount }, { count: commentCount }] = await Promise.all([
+          supabase
+            .from("votes")
+            .select("product_id", { count: "exact", head: true })
+            .eq("product_id", id),
+          supabase
+            .from("comments")
+            .select("id", { count: "exact", head: true })
+            .eq("product_id", id)
+            .eq("status", "live"),
+        ]);
+        product = {
+          ...raw,
+          vote_count: voteCount ?? 0,
+          comment_count: commentCount ?? 0,
+        } as ProductWithCounts;
+      }
+    }
+  }
+
   let userHasVoted = false;
-  if (user) {
+  if (user && product) {
     const { data: vote } = await supabase
       .from("votes")
       .select("user_id")
@@ -88,8 +130,25 @@ export default async function ProductPage({ params }: Props) {
 
   const builder = parseBuilder(product.builder);
 
+  const statusNotice: Record<string, string> = {
+    pending:
+      "This project is awaiting admin review. It is only visible to you until it is approved.",
+    rejected:
+      "This project was not approved for the public showcase. You can edit it and it can be re-reviewed.",
+    hidden: "This project is currently hidden by an admin.",
+    removed: "This project has been removed.",
+  };
+
   return (
     <div className="mx-auto max-w-2xl px-4 pt-24 pb-16 sm:px-6">
+      {product.status !== "live" && (
+        <div className="mb-6 flex flex-wrap items-center gap-3 rounded-xl border border-border bg-card-bg px-4 py-3">
+          <StatusBadge status={product.status} />
+          <p className="text-sm text-ink-muted">
+            {statusNotice[product.status] ?? "This project is not public yet."}
+          </p>
+        </div>
+      )}
       <div className="flex items-start justify-between gap-4">
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-3">
@@ -107,12 +166,14 @@ export default async function ProductPage({ params }: Props) {
           </div>
           <p className="mt-2 text-lg text-ink-muted">{product.tagline}</p>
         </div>
-        <VoteButton
-          productId={product.id}
-          productName={product.name}
-          initialCount={product.vote_count}
-          initialVoted={userHasVoted}
-        />
+        {product.status === "live" && (
+          <VoteButton
+            productId={product.id}
+            productName={product.name}
+            initialCount={product.vote_count}
+            initialVoted={userHasVoted}
+          />
+        )}
       </div>
 
       <div className="mt-4 flex flex-wrap items-center gap-3">
