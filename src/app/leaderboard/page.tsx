@@ -2,12 +2,13 @@ import Link from "next/link";
 import { ProductCard } from "@/components/product-card";
 import { DemoCountdownBanner } from "@/components/demo-countdown-banner";
 import { isMockMode, MOCK_PRODUCTS } from "@/lib/mock-data";
+import { currentWeekOf } from "@/lib/week";
 import type { ProductWithCounts } from "@/types/database";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
   title: "This Week's Favorites",
-  description: "The most-loved projects this week. Top 3 get to demo live every Friday.",
+  description: "The community's favorite projects this week. Top picks demo live every Friday.",
 };
 
 async function getProducts(): Promise<ProductWithCounts[]> {
@@ -21,11 +22,13 @@ async function getProducts(): Promise<ProductWithCounts[]> {
   const { data: products } = await supabase
     .from("product_with_counts")
     .select("*")
+    .eq("week_of", currentWeekOf())
     .order("vote_count", { ascending: false })
     .order("created_at", { ascending: false })
     .limit(20);
 
-  const { data: { user } } = await supabase.auth.getUser();
+  const { data: { session } } = await supabase.auth.getSession();
+  const user = session?.user ?? null;
 
   let result = (products ?? []) as ProductWithCounts[];
 
@@ -55,9 +58,9 @@ export default async function LeaderboardPage() {
 
       {top3.length === 0 ? (
         <div className="mt-8 rounded-2xl border border-dashed border-border py-16 text-center">
-          <p className="font-display text-xl font-bold text-ink">Nothing here yet this week</p>
+          <p className="font-display text-xl font-bold text-ink">No projects yet this week</p>
           <p className="mt-2 text-sm text-ink-muted">
-            Be the first to share something — every project starts somewhere.
+            Be the first to share something — even rough ideas are welcome here.
           </p>
         </div>
       ) : (
@@ -71,12 +74,13 @@ export default async function LeaderboardPage() {
                 typeof product.builder === "string"
                   ? JSON.parse(product.builder)
                   : product.builder;
+              const orderClass = idx === 0 ? "order-1" : idx === 1 ? "order-0" : "order-2";
 
               return (
                 <Link
                   key={product.id}
                   href={`/p/${product.id}`}
-                  className={`order-${idx === 0 ? 1 : idx === 1 ? 0 : 2} flex flex-col items-center rounded-2xl border p-6 text-center transition-all hover:scale-[1.02] ${
+                  className={`${orderClass} flex flex-col items-center rounded-2xl border p-6 text-center transition-all hover:scale-[1.02] ${
                     isFirst
                       ? "border-ink bg-ink text-paper-bg sm:-mt-4"
                       : "border-border bg-card-bg"

@@ -11,6 +11,7 @@ function LoginForm() {
   const [error, setError] = useState<string | null>(null);
   const searchParams = useSearchParams();
   const redirect = searchParams.get("redirect") || "/";
+  const authError = searchParams.get("error");
 
   const supabase = createClient();
 
@@ -59,6 +60,11 @@ function LoginForm() {
 
   return (
     <div className="mt-8 w-full space-y-4">
+      {authError && (
+        <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-center text-sm text-red-700">
+          Sign-in failed. Please try again.
+        </div>
+      )}
       <button
         onClick={handleGoogleLogin}
         className="flex w-full items-center justify-center gap-2 rounded-xl border border-border bg-card-bg px-4 py-3 text-sm font-semibold text-ink transition-all hover:scale-[1.01] hover:border-border-strong active:scale-[0.99]"
@@ -116,9 +122,10 @@ function LoginForm() {
 export default function LoginPage() {
   return (
     <div className="mx-auto flex min-h-[70vh] max-w-sm flex-col items-center justify-center px-4 pt-20">
-      <h1 className="font-display text-3xl font-black text-ink">Sign in</h1>
-      <p className="mt-2 text-center text-sm text-ink-muted">
-        Join to share your projects, give feedback, and discover what others are building.
+      <h1 className="font-display text-3xl font-black text-ink">Welcome in</h1>
+      <p className="mt-2 text-center text-base leading-relaxed text-ink-muted">
+        Join a community of builders who share what they&apos;re working on,
+        give honest feedback, and demo live every Friday.
       </p>
       <Suspense
         fallback={

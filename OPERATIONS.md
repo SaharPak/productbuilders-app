@@ -2,15 +2,15 @@
 
 ## Weekly Cycle
 
-The platform runs on a weekly cycle: **Saturday 00:00 → Friday 17:59** (Helsinki time).
+The platform runs on a weekly cycle: **Saturday 00:00 → Friday 14:29** (Helsinki time).
 
 - Builders submit products throughout the week
-- The community votes
-- Every **Friday at 18:00 Helsinki time**, the top 3 are crowned
+- The community votes and leaves feedback
+- Every **Friday 14:30 – 15:30 Helsinki time**, top projects demo live on Google Meet
 
 ### Automated Cron
 
-A Vercel Cron job runs every Friday at 15:00 UTC (18:00 EET/EEST):
+A Vercel Cron job runs every Friday at 11:30 UTC (14:30 EET/EEST):
 
 - Endpoint: `GET /api/cron/demo-day`
 - Authenticated via `CRON_SECRET` env var (Bearer token)
@@ -53,7 +53,7 @@ LIMIT 3;
 To make a user an admin:
 
 ```sql
-UPDATE profiles SET is_admin = true WHERE handle = 'saharpk';
+UPDATE profiles SET is_admin = true WHERE handle = '<your_handle>';
 ```
 
 The admin panel at `/admin` allows:

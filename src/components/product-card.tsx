@@ -20,9 +20,16 @@ export function ProductCard({ product, rank }: ProductCardProps) {
     <div className="group flex items-start gap-4 rounded-2xl border border-border bg-card-bg p-4 transition-all hover:border-border-strong">
       <div className="min-w-0 flex-1">
         <Link href={`/p/${product.id}`} className="block">
-          <h3 className="font-display text-lg font-bold text-ink leading-snug">
-            {product.name}
-          </h3>
+          <div className="flex items-center gap-2">
+            <h3 className="font-display text-lg font-bold text-ink leading-snug">
+              {product.name}
+            </h3>
+            {product.demo_type === "live_demo" && (
+              <span className="shrink-0 rounded-full bg-persimmon-light px-2 py-0.5 text-[10px] font-semibold text-persimmon">
+                🎤 {product.demo_language === "farsi" ? "فارسی" : "EN"}
+              </span>
+            )}
+          </div>
           <p className="mt-0.5 text-sm text-ink-muted line-clamp-2">
             {product.tagline}
           </p>

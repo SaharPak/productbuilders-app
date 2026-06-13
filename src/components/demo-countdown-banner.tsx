@@ -16,7 +16,7 @@ export function DemoCountdownBanner() {
   if (isDemoDay()) {
     return (
       <p className="mt-3 text-lg text-persimmon font-medium">
-        Demo day is today — tune in at 18:00 Helsinki time
+        Friday Showcase is happening now — join the Google Meet!
       </p>
     );
   }
@@ -27,8 +27,8 @@ export function DemoCountdownBanner() {
   return (
     <p className="mt-3 text-lg text-ink-muted">
       {days > 0
-        ? `${days} day${days !== 1 ? "s" : ""} and ${hours} hour${hours !== 1 ? "s" : ""} until demo day`
-        : `${hours} hour${hours !== 1 ? "s" : ""} until demo day`}
+        ? `${days} day${days !== 1 ? "s" : ""} and ${hours} hour${hours !== 1 ? "s" : ""} until Friday Showcase`
+        : `${hours} hour${hours !== 1 ? "s" : ""} until Friday Showcase`}
     </p>
   );
 }

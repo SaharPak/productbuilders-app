@@ -1,15 +1,18 @@
 import {
   startOfWeek,
-  endOfWeek,
   nextFriday,
+  addWeeks,
   isFriday,
-  isAfter,
   format,
   differenceInSeconds,
 } from "date-fns";
 import { TZDate } from "@date-fns/tz";
 
 const TZ = "Europe/Helsinki";
+const DEMO_START_HOUR = 14;
+const DEMO_START_MINUTE = 30;
+const DEMO_END_HOUR = 15;
+const DEMO_END_MINUTE = 30;
 
 export function helsinkiNow(): Date {
   return new TZDate(new Date(), TZ);
@@ -17,28 +20,41 @@ export function helsinkiNow(): Date {
 
 export function currentWeekOf(): string {
   const now = helsinkiNow();
-  const day = now.getDay();
-  // Week runs Sat 00:00 – Fri 17:59.
-  // Sat (6) and Sun (0) submissions belong to the following Monday.
-  if (day === 6 || day === 0) {
-    const mon = startOfWeek(now, { weekStartsOn: 1 });
-    const nextMon = new Date(mon);
-    nextMon.setDate(nextMon.getDate() + (day === 6 ? 2 : 1));
-    return format(nextMon, "yyyy-MM-dd");
-  }
   return format(startOfWeek(now, { weekStartsOn: 1 }), "yyyy-MM-dd");
 }
 
 export function nextDemoDate(): Date {
   const now = helsinkiNow();
-  if (isFriday(now) && now.getHours() < 18) {
+  if (isFriday(now) && now.getHours() < DEMO_END_HOUR) {
     const today = new Date(now);
-    today.setHours(18, 0, 0, 0);
+    today.setHours(DEMO_START_HOUR, DEMO_START_MINUTE, 0, 0);
     return today;
   }
   const fri = nextFriday(now);
-  fri.setHours(18, 0, 0, 0);
+  fri.setHours(DEMO_START_HOUR, DEMO_START_MINUTE, 0, 0);
   return fri;
+}
+
+/** Returns the next N upcoming Friday demo dates (formatted as yyyy-MM-dd). */
+export function upcomingDemoFridays(count = 4): { date: string; label: string }[] {
+  const now = helsinkiNow();
+  const fridays: { date: string; label: string }[] = [];
+  let candidate = nextFriday(now);
+
+  if (isFriday(now)) {
+    const cutoff = new Date(now);
+    cutoff.setHours(DEMO_START_HOUR, 0, 0, 0);
+    if (now < cutoff) candidate = new Date(now);
+  }
+
+  for (let i = 0; i < count; i++) {
+    const d = i === 0 ? candidate : addWeeks(candidate, i);
+    fridays.push({
+      date: format(d, "yyyy-MM-dd"),
+      label: format(d, "EEEE, MMMM d"),
+    });
+  }
+  return fridays;
 }
 
 export function secondsUntilDemo(): number {
@@ -47,5 +63,25 @@ export function secondsUntilDemo(): number {
 
 export function isDemoDay(): boolean {
   const now = helsinkiNow();
-  return isFriday(now) && now.getHours() >= 18;
+  return (
+    isFriday(now) &&
+    now.getHours() >= DEMO_START_HOUR &&
+    (now.getHours() < DEMO_END_HOUR ||
+      (now.getHours() === DEMO_END_HOUR && now.getMinutes() <= DEMO_END_MINUTE))
+  );
+}
+
+export function demoTimeString(): string {
+  return "Friday 3:00 – 4:00 PM (Iran)";
+}
+
+export function demoTimezones(): { tz: string; time: string }[] {
+  return [
+    { tz: "Iran (IRST)", time: "3:00 – 4:00 PM" },
+  ];
+}
+
+export function nextDemoLabel(): string {
+  const demo = nextDemoDate();
+  return format(demo, "EEEE, MMMM d");
 }

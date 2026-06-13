@@ -27,11 +27,11 @@ const jetbrainsMono = JetBrains_Mono({
 
 export const metadata: Metadata = {
   title: {
-    default: "Product Builders — Ship in public. Get heard.",
+    default: "Product Builders — Share what you're building",
     template: "%s | Product Builders",
   },
   description:
-    "Weekly product showcase platform. Builders submit, the community votes, top 3 demo live every Friday.",
+    "A friendly community where builders share projects, get honest feedback, and demo live every Friday on Google Meet.",
   metadataBase: new URL("https://productbuilders.app"),
   openGraph: {
     siteName: "Product Builders",

@@ -72,10 +72,25 @@ export default async function DemoDaysPage() {
                       rel="noopener noreferrer"
                       className="rounded-full border border-border px-3 py-1 text-xs font-medium text-ink-muted transition-all hover:border-border-strong hover:text-ink"
                     >
-                      Watch recording →
+                      Watch on YouTube →
                     </a>
                   )}
                 </div>
+
+                {dd.recording_url && (
+                  <div className="mt-4 aspect-video w-full overflow-hidden rounded-xl">
+                    <iframe
+                      src={dd.recording_url
+                        .replace("youtu.be/", "www.youtube.com/embed/")
+                        .replace("/watch?v=", "/embed/")
+                        .replace("&", "?")}
+                      className="h-full w-full"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                      allowFullScreen
+                      title={`Demo Day recording - ${format(new Date(dd.demo_date), "MMMM d, yyyy")}`}
+                    />
+                  </div>
+                )}
 
                 {weekWinners.length > 0 && (
                   <div className="mt-4 space-y-2">

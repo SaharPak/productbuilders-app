@@ -29,7 +29,7 @@ export default function SettingsPage() {
         .from("profiles")
         .select("*")
         .eq("id", user.id)
-        .single();
+        .maybeSingle();
 
       if (data) {
         setDisplayName(data.display_name ?? "");
@@ -38,6 +38,7 @@ export default function SettingsPage() {
       }
     }
     loadProfile();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   async function handleSave(e: React.FormEvent) {
@@ -48,10 +49,19 @@ export default function SettingsPage() {
 
     const cleanHandle = handle.replace(/^@/, "").toLowerCase().trim();
 
+    if (!/^[a-z0-9_]{3,30}$/.test(cleanHandle)) {
+      setError("Handle must be 3-30 characters: lowercase letters, numbers, or underscores.");
+      setLoading(false);
+      return;
+    }
+
     const {
       data: { user },
     } = await supabase.auth.getUser();
-    if (!user) return;
+    if (!user) {
+      router.push("/login?redirect=/settings");
+      return;
+    }
 
     const { error: updateError } = await supabase
       .from("profiles")
