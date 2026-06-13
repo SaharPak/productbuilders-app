@@ -1,7 +1,9 @@
 import Link from "next/link";
 import { ProductCard } from "@/components/product-card";
 import { BrowseTabs } from "@/components/browse-tabs";
+import { ShowcaseBanner } from "@/components/showcase-banner";
 import { isMockMode, MOCK_PRODUCTS } from "@/lib/mock-data";
+import { currentWeekOf } from "@/lib/week";
 import type { ProductWithCounts } from "@/types/database";
 
 interface Props {
@@ -22,11 +24,10 @@ async function getProducts(sortMode: "hot" | "new"): Promise<ProductWithCounts[]
   const { createClient } = await import("@/lib/supabase/server");
   const supabase = await createClient();
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { data: { session } } = await supabase.auth.getSession();
+  const user = session?.user ?? null;
 
-  let query = supabase.from("product_with_counts").select("*");
+  let query = supabase.from("product_with_counts").select("*").eq("week_of", currentWeekOf());
   if (sortMode === "new") {
     query = query.order("created_at", { ascending: false });
   } else {
@@ -55,17 +56,18 @@ export default async function HomePage({ searchParams }: Props) {
 
   return (
     <div className="mx-auto max-w-3xl px-4 pt-24 pb-16 sm:px-6">
-      <section className="mb-12 text-center">
+      <section className="mb-10 text-center">
         <h1 className="font-display text-4xl font-black text-ink sm:text-5xl">
-          What are you
+          Show what you&apos;re
           <br />
-          <span className="text-persimmon">building?</span>
+          <span className="text-persimmon">building</span>
         </h1>
-        <p className="mx-auto mt-4 max-w-lg text-lg text-ink-muted">
-          Submit your project, get votes from the community, and the
-          top 3 each week demo live on stream.
+        <p className="mx-auto mt-4 max-w-lg text-lg leading-relaxed text-ink-muted">
+          A friendly space for builders to share projects, get real feedback,
+          and showcase live every Friday. Whether it&apos;s an idea on a napkin
+          or a shipped product — you belong here.
         </p>
-        <div className="mt-6 flex justify-center gap-3">
+        <div className="mt-6 flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
           <Link
             href="/submit"
             className="rounded-full bg-persimmon px-6 py-2.5 text-sm font-semibold text-white transition-all hover:scale-[1.02] hover:bg-persimmon-hover active:scale-[0.98]"
@@ -76,9 +78,13 @@ export default async function HomePage({ searchParams }: Props) {
             href="/leaderboard"
             className="rounded-full border border-border px-6 py-2.5 text-sm font-semibold text-ink-muted transition-all hover:scale-[1.02] hover:border-border-strong active:scale-[0.98]"
           >
-            Browse projects
+            See what others are building
           </Link>
         </div>
+      </section>
+
+      <section className="mb-10">
+        <ShowcaseBanner />
       </section>
 
       <BrowseTabs activeSort={sortMode} />
@@ -87,16 +93,17 @@ export default async function HomePage({ searchParams }: Props) {
         {products.length === 0 ? (
           <div className="rounded-2xl border border-dashed border-border py-16 text-center">
             <p className="font-display text-xl font-bold text-ink">
-              Nothing here yet this week
+              Be the first to share this week
             </p>
             <p className="mt-2 text-sm text-ink-muted">
-              Got something you&apos;re working on? Share it — even if it&apos;s just an idea.
+              Working on something? Even rough ideas count. Share it and let the
+              community cheer you on.
             </p>
             <Link
               href="/submit"
               className="mt-4 inline-block rounded-full bg-persimmon px-5 py-2 text-sm font-semibold text-white transition-all hover:scale-[1.02] hover:bg-persimmon-hover active:scale-[0.98]"
             >
-              Share a project
+              Share what you&apos;re building
             </Link>
           </div>
         ) : (
