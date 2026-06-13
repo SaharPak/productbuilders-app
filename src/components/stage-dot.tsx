@@ -10,7 +10,7 @@ export function StageDot({ stage }: { stage: Stage }) {
   const { color, label } = config[stage];
   return (
     <span className="inline-flex items-center gap-1 text-xs text-ink-faint">
-      <span className={`h-1.5 w-1.5 rounded-full ${color}`} />
+      <span aria-hidden="true" className={`h-1.5 w-1.5 rounded-full ${color}`} />
       {label}
     </span>
   );

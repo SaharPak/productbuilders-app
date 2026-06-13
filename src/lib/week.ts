@@ -18,11 +18,19 @@ export function helsinkiNow(): Date {
   return new TZDate(new Date(), TZ);
 }
 
+/**
+ * Returns the Monday date key for the active Helsinki submission week.
+ * Weekend submissions roll into the upcoming week for the next Friday demo.
+ */
 export function currentWeekOf(): string {
   const now = helsinkiNow();
   return format(startOfWeek(now, { weekStartsOn: 1 }), "yyyy-MM-dd");
 }
 
+/**
+ * Returns the next Friday 18:00 Helsinki demo cutoff.
+ * Before that hour on Friday, the current day is still the next demo.
+ */
 export function nextDemoDate(): Date {
   const now = helsinkiNow();
   if (isFriday(now) && now.getHours() < DEMO_END_HOUR) {
@@ -57,6 +65,9 @@ export function upcomingDemoFridays(count = 4): { date: string; label: string }[
   return fridays;
 }
 
+/**
+ * Returns the non-negative countdown from now to the next Helsinki demo cutoff.
+ */
 export function secondsUntilDemo(): number {
   return Math.max(0, differenceInSeconds(nextDemoDate(), helsinkiNow()));
 }

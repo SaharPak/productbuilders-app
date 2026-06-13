@@ -58,6 +58,7 @@ export function ProductCard({ product, rank }: ProductCardProps) {
 
       <VoteButton
         productId={product.id}
+        productName={product.name}
         initialCount={product.vote_count}
         initialVoted={product.user_has_voted ?? false}
       />

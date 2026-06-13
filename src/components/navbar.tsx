@@ -137,6 +137,8 @@ export function Navbar() {
               <div className="relative" ref={menuRef}>
                 <button
                   onClick={() => setMenuOpen((v) => !v)}
+                  aria-label="Open account menu"
+                  aria-expanded={menuOpen}
                   className="flex h-8 w-8 items-center justify-center rounded-full bg-paper-bg-deep text-xs font-semibold text-ink-muted transition-colors hover:bg-border-strong"
                 >
                   {user.display_name?.charAt(0).toUpperCase() ?? "?"}

@@ -31,7 +31,9 @@ export async function GET(request: Request) {
       {
         cookies: {
           getAll() {
-            return parseCookieHeader(request.headers.get("Cookie") ?? "");
+            return parseCookieHeader(request.headers.get("Cookie") ?? "").map(
+              (cookie) => ({ name: cookie.name, value: cookie.value ?? "" })
+            );
           },
           setAll(cookiesToSet) {
             cookiesToSet.forEach(({ name, value, options }) => {

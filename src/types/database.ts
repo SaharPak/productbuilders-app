@@ -42,10 +42,13 @@ export interface Product {
   created_at: string;
 }
 
+export type ProductBuilder = Pick<Profile, "display_name" | "handle" | "avatar_url">;
+export type CommentAuthor = Pick<Profile, "display_name" | "handle" | "avatar_url">;
+
 export interface ProductWithCounts extends Product {
   vote_count: number;
   comment_count: number;
-  builder: Pick<Profile, "display_name" | "handle" | "avatar_url">;
+  builder: ProductBuilder | string;
   user_has_voted?: boolean;
 }
 
@@ -62,7 +65,7 @@ export interface Comment {
   body: string;
   status: CommentStatus;
   created_at: string;
-  author?: Pick<Profile, "display_name" | "handle" | "avatar_url">;
+  author?: CommentAuthor;
 }
 
 export interface DemoDay {
@@ -80,3 +83,9 @@ export interface DemoDayWinner {
   vote_count: number;
   product?: ProductWithCounts;
 }
+
+export type DemoDayWinnerProduct = Pick<Product, "id" | "name" | "tagline">;
+
+export type DemoDayWinnerWithProduct = Omit<DemoDayWinner, "product"> & {
+  product: DemoDayWinnerProduct | null;
+};

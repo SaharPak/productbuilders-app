@@ -86,11 +86,7 @@ export function CommentSection({ productId, mockComments }: Props) {
 
       <div className="mt-4 space-y-4">
         {comments.map((comment) => {
-          const author = comment.author as unknown as {
-            display_name: string;
-            handle: string | null;
-            avatar_url: string | null;
-          };
+          const author = comment.author;
           return (
             <div key={comment.id} className="rounded-xl border border-border bg-card-bg p-4">
               <div className="flex items-center gap-2">
@@ -119,7 +115,11 @@ export function CommentSection({ productId, mockComments }: Props) {
       </div>
 
       <form onSubmit={handleSubmit} className="mt-6">
+        <label htmlFor="comment-body" className="sr-only">
+          Add a comment
+        </label>
         <textarea
+          id="comment-body"
           value={body}
           onChange={(e) => setBody(e.target.value)}
           placeholder="Share your thoughts..."

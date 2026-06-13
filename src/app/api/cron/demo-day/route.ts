@@ -13,8 +13,15 @@ export async function GET(request: Request) {
   );
 
   // Get current week_of (Monday of this week in Helsinki time)
-  const { data: weekData } = await supabase.rpc("current_week");
+  const { data: weekData, error: weekError } = await supabase.rpc("current_week");
   const weekOf = weekData;
+
+  if (weekError) {
+    return NextResponse.json(
+      { error: `Could not determine current week: ${weekError.message}` },
+      { status: 500 }
+    );
+  }
 
   if (!weekOf) {
     return NextResponse.json({ error: "Could not determine current week" }, { status: 500 });
