@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { createClient } from "@/lib/supabase/client";
+import { updateProfile } from "./actions";
 
 export default function OnboardingPage() {
   const [displayName, setDisplayName] = useState("");
@@ -10,7 +10,6 @@ export default function OnboardingPage() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const router = useRouter();
-  const supabase = createClient();
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -25,26 +24,10 @@ export default function OnboardingPage() {
       return;
     }
 
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+    const result = await updateProfile(displayName.trim(), cleanHandle);
 
-    if (!user) {
-      router.push("/login");
-      return;
-    }
-
-    const { error: updateError } = await supabase
-      .from("profiles")
-      .update({ display_name: displayName.trim(), handle: cleanHandle })
-      .eq("id", user.id);
-
-    if (updateError) {
-      if (updateError.message.includes("duplicate") || updateError.message.includes("unique")) {
-        setError("That handle is already taken. Try another.");
-      } else {
-        setError(updateError.message);
-      }
+    if (result.error) {
+      setError(result.error);
       setLoading(false);
       return;
     }
@@ -55,10 +38,11 @@ export default function OnboardingPage() {
   return (
     <div className="mx-auto flex min-h-[70vh] max-w-sm flex-col items-center justify-center px-4 pt-20">
       <h1 className="font-display text-3xl font-black text-ink">
-        Hey, welcome 👋
+        Hey, welcome! 👋
       </h1>
-      <p className="mt-2 text-center text-sm text-ink-muted">
-        Quick setup — just a name and a handle so people know who you are.
+      <p className="mt-2 text-center text-base leading-relaxed text-ink-muted">
+        You&apos;re in! Just pick a name and a handle so people know who
+        you are. Takes 10 seconds.
       </p>
 
       <form onSubmit={handleSubmit} className="mt-8 w-full space-y-4">
@@ -70,7 +54,7 @@ export default function OnboardingPage() {
             type="text"
             value={displayName}
             onChange={(e) => setDisplayName(e.target.value)}
-            placeholder="Sahar"
+            placeholder="Alex"
             required
             maxLength={50}
             className="w-full rounded-xl border border-border bg-card-bg px-4 py-3 text-sm text-ink outline-none transition-colors placeholder:text-ink-faint focus:border-persimmon"
@@ -87,7 +71,7 @@ export default function OnboardingPage() {
               type="text"
               value={handle}
               onChange={(e) => setHandle(e.target.value)}
-              placeholder="saharpk"
+              placeholder="alexbuilds"
               required
               maxLength={30}
               className="w-full bg-transparent px-2 py-3 text-sm text-ink outline-none placeholder:text-ink-faint"

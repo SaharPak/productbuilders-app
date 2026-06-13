@@ -16,7 +16,7 @@ async function getProduct(id: string) {
   if (isMockMode()) {
     const product = MOCK_PRODUCTS.find((p) => p.id === id);
     const comments = MOCK_COMMENTS[id] ?? [];
-    return { product: product ?? null, userHasVoted: product?.user_has_voted ?? false, comments };
+    return { product: product ?? null, userHasVoted: product?.user_has_voted ?? false, isOwner: true, comments };
   }
 
   const { createClient } = await import("@/lib/supabase/server");
@@ -28,7 +28,8 @@ async function getProduct(id: string) {
     .eq("id", id)
     .single();
 
-  const { data: { user } } = await supabase.auth.getUser();
+  const { data: { session } } = await supabase.auth.getSession();
+  const user = session?.user ?? null;
 
   let userHasVoted = false;
   if (user) {
@@ -37,11 +38,13 @@ async function getProduct(id: string) {
       .select("user_id")
       .eq("user_id", user.id)
       .eq("product_id", id)
-      .single();
+      .maybeSingle();
     userHasVoted = !!vote;
   }
 
-  return { product, userHasVoted, comments: [] };
+  const isOwner = !!user && product?.builder_id === user.id;
+
+  return { product, userHasVoted, isOwner, comments: [] };
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
@@ -61,7 +64,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function ProductPage({ params }: Props) {
   const { id } = await params;
-  const { product, userHasVoted, comments } = await getProduct(id);
+  const { product, userHasVoted, isOwner, comments } = await getProduct(id);
 
   if (!product) notFound();
 
@@ -75,9 +78,19 @@ export default async function ProductPage({ params }: Props) {
     <div className="mx-auto max-w-2xl px-4 pt-24 pb-16 sm:px-6">
       <div className="flex items-start justify-between gap-4">
         <div className="min-w-0 flex-1">
-          <h1 className="font-display text-3xl font-black text-ink sm:text-4xl">
-            {typedProduct.name}
-          </h1>
+          <div className="flex items-center gap-3">
+            <h1 className="font-display text-3xl font-black text-ink sm:text-4xl">
+              {typedProduct.name}
+            </h1>
+            {typedProduct.demo_type === "live_demo" && (
+              <span className="shrink-0 rounded-full bg-persimmon-light px-3 py-1 text-xs font-semibold text-persimmon">
+                🎤 Live demo
+                {typedProduct.demo_language && (
+                  <> · {typedProduct.demo_language === "farsi" ? "فارسی" : "EN"}</>
+                )}
+              </span>
+            )}
+          </div>
           <p className="mt-2 text-lg text-ink-muted">{typedProduct.tagline}</p>
         </div>
         <VoteButton
@@ -112,6 +125,24 @@ export default async function ProductPage({ params }: Props) {
         )}
       </div>
 
+      {isOwner && typedProduct.demo_type === "live_demo" && (
+        <Link
+          href={`/p/${typedProduct.id}/prep`}
+          className="mt-4 inline-flex items-center gap-2 rounded-full border border-persimmon/30 bg-persimmon-light px-4 py-2 text-sm font-medium text-persimmon transition-all hover:scale-[1.02] hover:border-persimmon/50"
+        >
+          🎤 Demo prep guide
+        </Link>
+      )}
+
+      {isOwner && (
+        <Link
+          href={`/p/${typedProduct.id}/edit`}
+          className="mt-4 ml-2 inline-flex items-center gap-2 rounded-full border border-border px-4 py-2 text-sm font-medium text-ink-muted transition-all hover:scale-[1.02] hover:border-border-strong hover:text-ink"
+        >
+          Edit project
+        </Link>
+      )}
+
       {typedProduct.image_url && (
         <div className="mt-6 overflow-hidden rounded-2xl border border-border">
           <Image
@@ -121,6 +152,31 @@ export default async function ProductPage({ params }: Props) {
             height={400}
             className="w-full object-cover"
           />
+        </div>
+      )}
+
+      {(typedProduct.problem || typedProduct.audience) && (
+        <div className="mt-6 space-y-4 rounded-2xl border border-border bg-card-bg p-5">
+          {typedProduct.problem && (
+            <div>
+              <h3 className="text-xs font-semibold uppercase tracking-wider text-ink-faint">
+                Problem it solves
+              </h3>
+              <p className="mt-1.5 text-sm leading-relaxed text-ink-soft">
+                {typedProduct.problem}
+              </p>
+            </div>
+          )}
+          {typedProduct.audience && (
+            <div>
+              <h3 className="text-xs font-semibold uppercase tracking-wider text-ink-faint">
+                Built for
+              </h3>
+              <p className="mt-1.5 text-sm leading-relaxed text-ink-soft">
+                {typedProduct.audience}
+              </p>
+            </div>
+          )}
         </div>
       )}
 
