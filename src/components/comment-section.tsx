@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useTransition } from "react";
+import { useCallback, useEffect, useState, useTransition } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { isMockMode } from "@/lib/mock-data";
 import { formatDistanceToNow } from "date-fns";
@@ -18,13 +18,9 @@ export function CommentSection({ productId, mockComments }: Props) {
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const mock = isMockMode();
-  const supabase = mock ? null : createClient();
+  const [supabase] = useState(() => (mock ? null : createClient()));
 
-  useEffect(() => {
-    if (!mock && supabase) loadComments();
-  }, []);
-
-  async function loadComments() {
+  const loadComments = useCallback(async () => {
     if (!supabase) return;
     const { data } = await supabase
       .from("comments")
@@ -33,7 +29,14 @@ export function CommentSection({ productId, mockComments }: Props) {
       .eq("status", "live")
       .order("created_at", { ascending: true });
     if (data) setComments(data as unknown as Comment[]);
-  }
+  }, [supabase, productId]);
+
+  useEffect(() => {
+    // Async fetch on mount: setState happens after the awaited request, not
+    // synchronously, so this does not cause cascading renders.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (!mock && supabase) loadComments();
+  }, [mock, supabase, loadComments]);
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();

@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import { ProductCard } from "@/components/product-card";
 import { isMockMode, MOCK_PROFILES, MOCK_PRODUCTS } from "@/lib/mock-data";
 import { formatDistanceToNow } from "date-fns";
-import type { ProductWithCounts, Profile } from "@/types/database";
+import type { ProductWithCounts } from "@/types/database";
 import type { Metadata } from "next";
 
 interface Props {

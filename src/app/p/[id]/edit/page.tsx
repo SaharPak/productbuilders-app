@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { upcomingDemoFridays, demoTimezones } from "@/lib/week";
+import { upcomingDemoFridays } from "@/lib/week";
 import { updateProduct, deleteProduct } from "../actions";
 import type { Category, Stage, DemoType, DemoLanguage } from "@/types/database";
 

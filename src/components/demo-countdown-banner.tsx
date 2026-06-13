@@ -1,17 +1,19 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useSyncExternalStore } from "react";
 import { secondsUntilDemo, isDemoDay } from "@/lib/week";
 
-export function DemoCountdownBanner() {
-  const [remaining, setRemaining] = useState(secondsUntilDemo());
+function subscribeToClock(callback: () => void) {
+  const interval = setInterval(callback, 1000);
+  return () => clearInterval(interval);
+}
 
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setRemaining(secondsUntilDemo());
-    }, 1000);
-    return () => clearInterval(interval);
-  }, []);
+export function DemoCountdownBanner() {
+  const remaining = useSyncExternalStore(
+    subscribeToClock,
+    () => secondsUntilDemo(),
+    () => 0
+  );
 
   if (isDemoDay()) {
     return (

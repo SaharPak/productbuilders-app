@@ -1,7 +1,6 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
-import { redirect } from "next/navigation";
 import type { Category, Stage, DemoType, DemoLanguage } from "@/types/database";
 
 export async function updateProduct(

@@ -1,18 +1,19 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useSyncExternalStore } from "react";
 import { secondsUntilDemo, isDemoDay } from "@/lib/week";
 
-export function DemoCountdownPill() {
-  const [remaining, setRemaining] = useState<number | null>(null);
+function subscribeToClock(callback: () => void) {
+  const interval = setInterval(callback, 1000);
+  return () => clearInterval(interval);
+}
 
-  useEffect(() => {
-    setRemaining(secondsUntilDemo());
-    const interval = setInterval(() => {
-      setRemaining(secondsUntilDemo());
-    }, 1000);
-    return () => clearInterval(interval);
-  }, []);
+export function DemoCountdownPill() {
+  const remaining = useSyncExternalStore(
+    subscribeToClock,
+    () => secondsUntilDemo(),
+    () => null
+  );
 
   if (remaining === null) {
     return null;

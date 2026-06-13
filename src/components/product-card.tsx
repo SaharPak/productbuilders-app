@@ -7,10 +7,9 @@ import type { ProductWithCounts } from "@/types/database";
 
 interface ProductCardProps {
   product: ProductWithCounts;
-  rank?: number;
 }
 
-export function ProductCard({ product, rank }: ProductCardProps) {
+export function ProductCard({ product }: ProductCardProps) {
   const builder =
     typeof product.builder === "string"
       ? JSON.parse(product.builder)

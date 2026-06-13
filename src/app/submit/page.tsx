@@ -535,6 +535,7 @@ export default function SubmitPage() {
               </p>
               {imagePreview ? (
                 <div className="relative">
+                  {/* eslint-disable-next-line @next/next/no-img-element -- local data-URL preview of a user-selected file, not an optimizable remote image */}
                   <img
                     src={imagePreview}
                     alt="Preview"
