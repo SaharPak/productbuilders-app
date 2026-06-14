@@ -19,6 +19,9 @@ export function CommentSection({ productId, mockComments }: Props) {
   const [error, setError] = useState<string | null>(null);
   const mock = isMockMode();
   const [supabase] = useState(() => (mock ? null : createClient()));
+  const commentBodyDescriptionIds = error
+    ? "comment-body-count comment-body-error"
+    : "comment-body-count";
 
   const loadComments = useCallback(async () => {
     if (!supabase) return;
@@ -128,10 +131,12 @@ export function CommentSection({ productId, mockComments }: Props) {
           placeholder="Share your thoughts..."
           maxLength={500}
           rows={3}
+          aria-describedby={commentBodyDescriptionIds}
+          aria-invalid={Boolean(error)}
           className="w-full resize-none rounded-xl border border-border bg-card-bg px-4 py-3 text-sm text-ink outline-none transition-colors placeholder:text-ink-faint focus:border-persimmon"
         />
         <div className="mt-2 flex items-center justify-between">
-          <span className="font-mono text-xs text-ink-faint">{body.length}/500</span>
+          <span id="comment-body-count" className="font-mono text-xs text-ink-faint">{body.length}/500</span>
           <button
             type="submit"
             disabled={isPending || !body.trim()}
@@ -140,7 +145,7 @@ export function CommentSection({ productId, mockComments }: Props) {
             {isPending ? "Posting..." : "Post comment"}
           </button>
         </div>
-        {error && <p className="mt-2 text-sm text-red-600">{error}</p>}
+        {error && <p id="comment-body-error" role="alert" className="mt-2 text-sm text-red-600">{error}</p>}
       </form>
     </div>
   );
