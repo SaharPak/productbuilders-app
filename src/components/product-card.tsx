@@ -3,16 +3,16 @@
 import Link from "next/link";
 import { VoteButton } from "./vote-button";
 import { StageDot } from "./stage-dot";
-import type { ProductWithCounts } from "@/types/database";
+import type { ProductBuilder, ProductWithCounts } from "@/types/database";
 
 interface ProductCardProps {
   product: ProductWithCounts;
 }
 
 export function ProductCard({ product }: ProductCardProps) {
-  const builder =
+  const builder: ProductBuilder =
     typeof product.builder === "string"
-      ? JSON.parse(product.builder)
+      ? (JSON.parse(product.builder) as ProductBuilder)
       : product.builder;
 
   return (
