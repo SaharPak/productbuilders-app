@@ -3,6 +3,7 @@ import { Fraunces, Manrope, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import { Navbar } from "@/components/navbar";
 import { Footer } from "@/components/footer";
+import { DemoModeBanner } from "@/components/demo-mode-banner";
 
 const fraunces = Fraunces({
   variable: "--font-display",
@@ -54,6 +55,7 @@ export default function RootLayout({
         <Navbar />
         <main className="flex-1">{children}</main>
         <Footer />
+        <DemoModeBanner />
       </body>
     </html>
   );

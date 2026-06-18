@@ -1,8 +1,10 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { isMockMode } from "@/lib/mock-data";
 import { currentWeekOf, upcomingDemoFridays, demoTimezones } from "@/lib/week";
 import type { Category, Stage, DemoType, DemoLanguage } from "@/types/database";
 
@@ -190,6 +192,34 @@ export default function SubmitPage() {
   }
 
   const canSubmit = name.trim() && tagline.trim() && demoType;
+
+  if (isMockMode()) {
+    return (
+      <div className="mx-auto max-w-lg px-4 pt-24 pb-16 sm:px-6">
+        <div className="rounded-2xl border border-dashed border-border bg-card-bg p-8 text-center">
+          <span className="text-3xl">🧪</span>
+          <h1 className="mt-3 font-display text-2xl font-black text-ink">
+            Demo mode
+          </h1>
+          <p className="mt-2 text-sm leading-relaxed text-ink-muted">
+            You&apos;re viewing sample data without a database connection.
+            Submitting projects needs Supabase configured. See the README for
+            the 5-minute setup, then add your keys to{" "}
+            <code className="rounded bg-paper-bg-deep px-1 py-0.5 font-mono text-xs">
+              .env.local
+            </code>
+            .
+          </p>
+          <Link
+            href="/"
+            className="mt-5 inline-block rounded-full bg-persimmon px-5 py-2 text-sm font-semibold text-white transition-all hover:scale-[1.02] hover:bg-persimmon-hover"
+          >
+            Browse the demo
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="mx-auto max-w-lg px-4 pt-24 pb-16 sm:px-6">

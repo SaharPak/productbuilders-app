@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { ProductCard } from "@/components/product-card";
 import { DemoCountdownBanner } from "@/components/demo-countdown-banner";
-import { isMockMode, MOCK_PRODUCTS } from "@/lib/mock-data";
+import { isMockMode, mockPublicProducts } from "@/lib/mock-data";
 import { currentWeekOf } from "@/lib/week";
 import type { ProductWithCounts } from "@/types/database";
 import type { Metadata } from "next";
@@ -13,7 +13,7 @@ export const metadata: Metadata = {
 
 async function getProducts(): Promise<ProductWithCounts[]> {
   if (isMockMode()) {
-    return [...MOCK_PRODUCTS].sort((a, b) => b.vote_count - a.vote_count);
+    return mockPublicProducts().sort((a, b) => b.vote_count - a.vote_count);
   }
 
   const { createClient } = await import("@/lib/supabase/server");

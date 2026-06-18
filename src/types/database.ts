@@ -6,9 +6,15 @@ export type Category =
   | "Mobile"
   | "Community"
   | "Other";
-export type ProductStatus = "live" | "hidden" | "removed";
+export type ProductStatus =
+  | "pending"
+  | "live"
+  | "hidden"
+  | "removed"
+  | "rejected";
 export type CommentStatus = "live" | "hidden";
 export type DemoDayStatus = "upcoming" | "completed";
+export type DemoDayProjectStatus = "selected" | "presented" | "cancelled";
 export type DemoType = "live_demo" | "feedback_only";
 export type DemoLanguage = "farsi" | "english";
 
@@ -88,4 +94,22 @@ export type DemoDayWinnerProduct = Pick<Product, "id" | "name" | "tagline">;
 
 export type DemoDayWinnerWithProduct = Omit<DemoDayWinner, "product"> & {
   product: DemoDayWinnerProduct | null;
+};
+
+export interface DemoDayProject {
+  week_of: string;
+  product_id: string;
+  display_order: number;
+  status: DemoDayProjectStatus;
+  created_at: string;
+  product?: ProductWithCounts | null;
+}
+
+export type DemoDaySelectedProduct = Pick<
+  Product,
+  "id" | "name" | "tagline" | "stage" | "category" | "demo_type" | "demo_language"
+>;
+
+export type DemoDayProjectWithProduct = Omit<DemoDayProject, "product"> & {
+  product: DemoDaySelectedProduct | null;
 };
