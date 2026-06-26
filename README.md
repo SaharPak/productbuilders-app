@@ -60,8 +60,12 @@ npm install
    - `supabase/migrations/001_initial_schema.sql`
    - `supabase/migrations/002_demo_type_and_guided_fields.sql`
    - `supabase/migrations/003_admin_read_all_products.sql`
+   - `supabase/migrations/004_storage_product_images.sql`
+   - `supabase/migrations/005_rls_fixes.sql`
+   - `supabase/migrations/006_current_week_cycle.sql`
 3. Enable **Google OAuth** (optional) under Authentication, Providers, Google.
-4. Create a public **Storage bucket** named `product-images`.
+4. Under **Authentication → URL Configuration**, set your production and local callback URLs (see Deploy section).
+5. Storage is created by migration `004`; no manual bucket setup needed if migrations ran in order.
 
 ### 3. Configure environment
 

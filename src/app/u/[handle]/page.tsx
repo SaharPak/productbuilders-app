@@ -38,8 +38,7 @@ async function getProfileData(handle: string) {
     .eq("builder_id", profile.id)
     .order("created_at", { ascending: false });
 
-  const { data: { session } } = await supabase.auth.getSession();
-  const user = session?.user ?? null;
+  const { data: { user } } = await supabase.auth.getUser();
 
   let productsWithVotes = (products ?? []) as ProductWithCounts[];
   if (user && products && products.length > 0) {

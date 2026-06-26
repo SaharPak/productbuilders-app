@@ -94,6 +94,12 @@ export default function SubmitPage() {
       return;
     }
 
+    if (demoType === "live_demo" && !demoWeek) {
+      setError("Pick a Friday demo slot before submitting.");
+      setLoading(false);
+      return;
+    }
+
     let image_url: string | null = null;
 
     if (imageFile) {
@@ -137,41 +143,23 @@ export default function SubmitPage() {
       week_of: currentWeekOf(),
     };
 
-    let data: { id: string } | null = null;
-    let insertError: { message: string } | null = null;
-
     const result = await supabase
       .from("products")
       .insert(insertPayload)
       .select("id")
       .single();
 
-    data = result.data;
-    insertError = result.error;
-
-    if (insertError?.message?.includes("column")) {
-      const safePayload: Record<string, unknown> = {
-        builder_id: user.id,
-        name: name.trim(),
-        tagline: tagline.trim(),
-        description: description.trim() || null,
-        url: finalUrl,
-        image_url,
-        category,
-        stage,
-        week_of: currentWeekOf(),
-      };
-      const retry = await supabase
-        .from("products")
-        .insert(safePayload)
-        .select("id")
-        .single();
-      data = retry.data;
-      insertError = retry.error;
-    }
+    const data = result.data;
+    const insertError = result.error;
 
     if (insertError) {
-      setError(insertError.message);
+      if (insertError.message.includes("column")) {
+        setError(
+          "Database schema is out of date. Run migration 002_demo_type_and_guided_fields.sql in Supabase."
+        );
+      } else {
+        setError(insertError.message);
+      }
       setLoading(false);
       return;
     }
@@ -189,7 +177,11 @@ export default function SubmitPage() {
     }
   }
 
-  const canSubmit = name.trim() && tagline.trim() && demoType;
+  const canSubmit =
+    name.trim() &&
+    tagline.trim() &&
+    demoType &&
+    (demoType !== "live_demo" || demoWeek);
 
   return (
     <div className="mx-auto max-w-lg px-4 pt-24 pb-16 sm:px-6">

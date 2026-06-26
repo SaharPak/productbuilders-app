@@ -26,8 +26,7 @@ async function getProductForPrep(id: string): Promise<{
     .eq("id", id)
     .single();
 
-  const { data: { session } } = await supabase.auth.getSession();
-  const user = session?.user ?? null;
+  const { data: { user } } = await supabase.auth.getUser();
 
   const isOwner = !!user && product?.builder_id === user.id;
 

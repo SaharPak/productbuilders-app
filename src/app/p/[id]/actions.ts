@@ -39,6 +39,10 @@ export async function updateProduct(
     return { error: "You can only edit your own products." };
   }
 
+  if (data.demo_type === "live_demo" && !data.demo_week) {
+    return { error: "Pick a Friday demo slot for live demos." };
+  }
+
   const { error } = await supabase
     .from("products")
     .update({

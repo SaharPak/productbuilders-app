@@ -12,7 +12,6 @@ export async function GET(request: Request) {
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   );
 
-  // Get current week_of (Monday of this week in Helsinki time)
   const { data: weekData, error: weekError } = await supabase.rpc("current_week");
   const weekOf = weekData;
 
@@ -27,33 +26,45 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "Could not determine current week" }, { status: 500 });
   }
 
-  // Get top 3 products for the week
-  const { data: topProducts } = await supabase
+  const { data: topProducts, error: productsError } = await supabase
     .from("product_with_counts")
     .select("id, vote_count, week_of")
     .eq("week_of", weekOf)
     .order("vote_count", { ascending: false })
     .limit(3);
 
+  if (productsError) {
+    return NextResponse.json({ error: productsError.message }, { status: 500 });
+  }
+
   if (!topProducts || topProducts.length === 0) {
     return NextResponse.json({ message: "No products this week", weekOf });
   }
 
-  // Upsert demo day
-  await supabase.from("demo_days").upsert({
+  const { error: demoError } = await supabase.from("demo_days").upsert({
     week_of: weekOf,
     demo_date: new Date().toISOString(),
     status: "completed",
   });
 
-  // Insert winners
+  if (demoError) {
+    return NextResponse.json({ error: demoError.message }, { status: 500 });
+  }
+
   for (let i = 0; i < topProducts.length; i++) {
-    await supabase.from("demo_day_winners").upsert({
+    const { error: winnerError } = await supabase.from("demo_day_winners").upsert({
       week_of: weekOf,
       rank: i + 1,
       product_id: topProducts[i].id,
       vote_count: topProducts[i].vote_count,
     });
+
+    if (winnerError) {
+      return NextResponse.json(
+        { error: `Failed to record winner ${i + 1}: ${winnerError.message}` },
+        { status: 500 }
+      );
+    }
   }
 
   return NextResponse.json({

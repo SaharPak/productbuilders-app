@@ -5,7 +5,8 @@ import { VoteButton } from "@/components/vote-button";
 import { StageDot } from "@/components/stage-dot";
 import { CommentSection } from "@/components/comment-section";
 import { isMockMode, MOCK_PRODUCTS, MOCK_COMMENTS } from "@/lib/mock-data";
-import type { Comment, ProductBuilder, ProductWithCounts } from "@/types/database";
+import { parseBuilder } from "@/lib/parse-builder";
+import type { Comment, ProductWithCounts } from "@/types/database";
 import type { Metadata } from "next";
 
 interface Props {
@@ -29,15 +30,45 @@ async function getProduct(id: string): Promise<ProductPageData> {
   const { createClient } = await import("@/lib/supabase/server");
   const supabase = await createClient();
 
-  const { data } = await supabase
-    .from("product_with_counts")
-    .select("*")
-    .eq("id", id)
-    .single();
-  const product = data as ProductWithCounts | null;
+  const { data: { user } } = await supabase.auth.getUser();
 
-  const { data: { session } } = await supabase.auth.getSession();
-  const user = session?.user ?? null;
+  let product = (
+    await supabase.from("product_with_counts").select("*").eq("id", id).maybeSingle()
+  ).data as ProductWithCounts | null;
+
+  // Owners can view hidden/removed products (RLS allows; view filters live-only)
+  if (!product && user) {
+    const { data: ownProduct } = await supabase
+      .from("products")
+      .select("*")
+      .eq("id", id)
+      .eq("builder_id", user.id)
+      .maybeSingle();
+
+    if (ownProduct) {
+      const [{ count: voteCount }, { count: commentCount }, { data: profile }] =
+        await Promise.all([
+          supabase.from("votes").select("*", { count: "exact", head: true }).eq("product_id", id),
+          supabase
+            .from("comments")
+            .select("*", { count: "exact", head: true })
+            .eq("product_id", id)
+            .eq("status", "live"),
+          supabase
+            .from("profiles")
+            .select("display_name, handle, avatar_url")
+            .eq("id", ownProduct.builder_id)
+            .single(),
+        ]);
+
+      product = {
+        ...ownProduct,
+        vote_count: voteCount ?? 0,
+        comment_count: commentCount ?? 0,
+        builder: profile ?? { display_name: "Builder", handle: null, avatar_url: null },
+      };
+    }
+  }
 
   let userHasVoted = false;
   if (user) {
@@ -53,16 +84,6 @@ async function getProduct(id: string): Promise<ProductPageData> {
   const isOwner = !!user && product?.builder_id === user.id;
 
   return { product, userHasVoted, isOwner, comments: [] };
-}
-
-function parseBuilder(builder: ProductWithCounts["builder"]): ProductBuilder | null {
-  if (typeof builder !== "string") return builder;
-
-  try {
-    return JSON.parse(builder) as ProductBuilder;
-  } catch {
-    return null;
-  }
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {

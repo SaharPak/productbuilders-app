@@ -83,7 +83,11 @@ export default function AdminPage() {
   }
 
   async function updateStatus(id: string, status: string) {
-    await supabase.from("products").update({ status }).eq("id", id);
+    const { error } = await supabase.from("products").update({ status }).eq("id", id);
+    if (error) {
+      setMessage(`Failed to update product: ${error.message}`);
+      return;
+    }
     await loadProducts();
   }
 
@@ -135,6 +139,7 @@ export default function AdminPage() {
     }
 
     setMessage(`Snapshot completed for week of ${weekOf}. ${topProducts.length} winners recorded.`);
+    await loadDemoDays();
     setSnapshotLoading(false);
   }
 
