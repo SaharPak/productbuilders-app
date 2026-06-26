@@ -18,13 +18,31 @@ export function helsinkiNow(): Date {
   return new TZDate(new Date(), TZ);
 }
 
+/** True after Friday demo ends or on Sat/Sun — submissions belong to the next cycle. */
+function rollsToNextCycle(now: Date): boolean {
+  const day = now.getDay();
+  if (day === 0 || day === 6) return true;
+  if (
+    isFriday(now) &&
+    (now.getHours() > DEMO_END_HOUR ||
+      (now.getHours() === DEMO_END_HOUR && now.getMinutes() > DEMO_END_MINUTE))
+  ) {
+    return true;
+  }
+  return false;
+}
+
 /**
  * Returns the Monday date key for the active Helsinki submission week.
- * Weekend submissions roll into the upcoming week for the next Friday demo.
+ * Weekend submissions and post-demo Friday roll into the upcoming week.
  */
 export function currentWeekOf(): string {
   const now = helsinkiNow();
-  return format(startOfWeek(now, { weekStartsOn: 1 }), "yyyy-MM-dd");
+  let weekStart = startOfWeek(now, { weekStartsOn: 1 });
+  if (rollsToNextCycle(now)) {
+    weekStart = addWeeks(weekStart, 1);
+  }
+  return format(weekStart, "yyyy-MM-dd");
 }
 
 /**
@@ -50,9 +68,7 @@ export function upcomingDemoFridays(count = 4): { date: string; label: string }[
   let candidate = nextFriday(now);
 
   if (isFriday(now)) {
-    const cutoff = new Date(now);
-    cutoff.setHours(DEMO_START_HOUR, 0, 0, 0);
-    if (now < cutoff) candidate = new Date(now);
+    if (now.getHours() < DEMO_END_HOUR) candidate = new Date(now);
   }
 
   for (let i = 0; i < count; i++) {

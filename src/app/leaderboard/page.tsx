@@ -27,8 +27,7 @@ async function getProducts(): Promise<ProductWithCounts[]> {
     .order("created_at", { ascending: false })
     .limit(20);
 
-  const { data: { session } } = await supabase.auth.getSession();
-  const user = session?.user ?? null;
+  const { data: { user } } = await supabase.auth.getUser();
 
   let result = (products ?? []) as ProductWithCounts[];
 

@@ -3,17 +3,15 @@
 import Link from "next/link";
 import { VoteButton } from "./vote-button";
 import { StageDot } from "./stage-dot";
-import type { ProductBuilder, ProductWithCounts } from "@/types/database";
+import { parseBuilder } from "@/lib/parse-builder";
+import type { ProductWithCounts } from "@/types/database";
 
 interface ProductCardProps {
   product: ProductWithCounts;
 }
 
 export function ProductCard({ product }: ProductCardProps) {
-  const builder: ProductBuilder =
-    typeof product.builder === "string"
-      ? (JSON.parse(product.builder) as ProductBuilder)
-      : product.builder;
+  const builder = parseBuilder(product.builder);
 
   return (
     <div className="group flex items-start gap-4 rounded-2xl border border-border bg-card-bg p-4 transition-all hover:border-border-strong">

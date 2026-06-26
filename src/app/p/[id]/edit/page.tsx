@@ -93,6 +93,12 @@ export default function EditProductPage() {
     setError(null);
     setSaved(false);
 
+    if (demoType === "live_demo" && !demoWeek) {
+      setError("Pick a Friday demo slot for live demos.");
+      setLoading(false);
+      return;
+    }
+
     const result = await updateProduct(productId, {
       name,
       tagline,
