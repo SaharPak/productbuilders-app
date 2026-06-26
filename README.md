@@ -36,7 +36,7 @@ Builders choose one of two paths when they submit:
 - **Database, Auth, Storage:** Supabase (Postgres, Row Level Security, Auth, Storage)
 - **Styling:** Tailwind CSS v4
 - **Fonts:** Fraunces (display), Manrope (body), JetBrains Mono (metadata)
-- **Deployment:** Vercel (with a weekly cron job)
+- **Deployment:** Cloudflare Pages (with a scheduled Worker for the weekly demo-day snapshot)
 
 ## Local setup
 
@@ -60,8 +60,23 @@ npm install
    - `supabase/migrations/001_initial_schema.sql`
    - `supabase/migrations/002_demo_type_and_guided_fields.sql`
    - `supabase/migrations/003_admin_read_all_products.sql`
-3. Enable **Google OAuth** (optional) under Authentication, Providers, Google.
-4. Create a public **Storage bucket** named `product-images`.
+3. Under **Authentication → URL Configuration**, set:
+   - **Site URL:** your production URL (e.g. `https://productbuilders.app`)
+   - **Redirect URLs:** `https://productbuilders.app/auth/callback`, `http://localhost:3000/auth/callback` (add your `*.pages.dev` preview URL if needed)
+4. Enable **Google OAuth** (optional) under Authentication, Providers, Google.
+5. Create a public **Storage bucket** named `product-images`, then add upload/read policies in the SQL Editor:
+   ```sql
+   CREATE POLICY "Users upload own images"
+   ON storage.objects FOR INSERT TO authenticated
+   WITH CHECK (
+     bucket_id = 'product-images'
+     AND (storage.foldername(name))[1] = 'products'
+   );
+
+   CREATE POLICY "Public read product images"
+   ON storage.objects FOR SELECT TO public
+   USING (bucket_id = 'product-images');
+   ```
 
 ### 3. Configure environment
 
@@ -99,14 +114,33 @@ After creating your first account, grab your user UUID from the Supabase Auth da
 - `npm run start`: serve the production build
 - `npm run lint`: run ESLint
 
-## Deploy to Vercel
+## Deploy to Cloudflare Pages
 
 1. Push to GitHub.
-2. Import the repo in Vercel.
-3. Add the environment variables from `.env.example`.
-4. Deploy.
+2. In [Cloudflare Dashboard](https://dash.cloudflare.com) → **Workers & Pages** → **Create** → **Pages** → connect this repo.
+3. Use these build settings:
+   - **Framework preset:** Next.js (or your OpenNext setup if you use that adapter)
+   - **Build command:** `npm run build`
+   - **Build output:** follow Cloudflare’s Next.js guidance for your chosen adapter (often `.open-next/` when using OpenNext)
+4. Add the environment variables from `.env.example` under **Settings → Environment variables** (Production and Preview):
+   - `NEXT_PUBLIC_SUPABASE_URL`
+   - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+   - `SUPABASE_SERVICE_ROLE_KEY`
+   - `CRON_SECRET`
+5. Deploy and confirm auth redirects work against your Cloudflare URL (custom domain or `*.pages.dev`).
 
-`vercel.json` configures a cron job that runs every Friday at 11:30 UTC (14:30 Helsinki) to snapshot the week's top 3 demo-day winners. See the operations guide for manual trigger options and admin tasks.
+### Friday demo-day cron (required on Cloudflare)
+
+Cloudflare Pages does **not** read `vercel.json`. Schedule something to call the snapshot endpoint every **Friday at 11:30 UTC** (14:30 Helsinki):
+
+```
+GET https://productbuilders.app/api/cron/demo-day
+Authorization: Bearer YOUR_CRON_SECRET
+```
+
+Recommended: a **Cloudflare Cron Trigger** on a small Worker (see [OPERATIONS.md](./OPERATIONS.md)). Alternatives: the admin panel (“Take snapshot now”), an external cron service, or manual `curl`.
+
+> **Vercel alternative:** `vercel.json` in this repo configures the same cron for Vercel deployments only. If you deploy there instead, set the same env vars in Vercel and skip the Worker setup.
 
 ## Project structure
 

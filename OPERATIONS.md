@@ -10,14 +10,56 @@ The platform runs on a weekly cycle: **Saturday 00:00 → Friday 14:29** (Helsin
 
 ### Automated Cron
 
-A Vercel Cron job runs every Friday at 11:30 UTC (14:30 EET/EEST):
+Production runs on **Cloudflare Pages**. Something must call the snapshot endpoint every **Friday at 11:30 UTC** (14:30 EET/EEST):
 
 - Endpoint: `GET /api/cron/demo-day`
-- Authenticated via `CRON_SECRET` env var (Bearer token)
+- Authenticated via `CRON_SECRET` env var (`Authorization: Bearer …` header)
 - What it does:
   1. Queries the top 3 products by votes for the current week
   2. Inserts rows into `demo_day_winners`
   3. Marks the `demo_days` row as `completed`
+
+#### Cloudflare Cron Trigger (recommended)
+
+Create a Worker with a cron schedule and store `CRON_SECRET` as a Worker secret.
+
+**`wrangler.toml`**
+```toml
+name = "productbuilders-demo-day-cron"
+main = "src/index.ts"
+compatibility_date = "2024-09-23"
+
+[triggers]
+crons = ["30 11 * * 5"]
+```
+
+**`src/index.ts`**
+```ts
+export default {
+  async scheduled(
+    _controller: ScheduledController,
+    env: { CRON_SECRET: string; APP_URL: string },
+  ) {
+    const res = await fetch(`${env.APP_URL}/api/cron/demo-day`, {
+      headers: { Authorization: `Bearer ${env.CRON_SECRET}` },
+    });
+    if (!res.ok) {
+      console.error("demo-day cron failed", res.status, await res.text());
+    }
+  },
+};
+```
+
+Deploy the Worker, then set secrets:
+
+```bash
+wrangler secret put CRON_SECRET    # same value as on Cloudflare Pages
+wrangler secret put APP_URL        # e.g. https://productbuilders.app
+```
+
+Check **Workers → your cron Worker → Logs** after the first run to confirm a `200` response.
+
+> **Vercel deployments:** `vercel.json` configures this schedule automatically when hosted on Vercel and `CRON_SECRET` is set in project env vars.
 
 ### Manual Trigger
 
