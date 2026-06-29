@@ -24,8 +24,7 @@ async function getProducts(sortMode: "hot" | "new"): Promise<ProductWithCounts[]
   const { createClient } = await import("@/lib/supabase/server");
   const supabase = await createClient();
 
-  const { data: { session } } = await supabase.auth.getSession();
-  const user = session?.user ?? null;
+  const { data: { user } } = await supabase.auth.getUser();
 
   let query = supabase.from("product_with_counts").select("*").eq("week_of", currentWeekOf());
   if (sortMode === "new") {

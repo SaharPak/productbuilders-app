@@ -1,11 +1,13 @@
 import { NextResponse } from "next/server";
 import { createServerClient, parseCookieHeader } from "@supabase/ssr";
 import type { CookieOptions } from "@supabase/ssr";
+import { safeRedirectPath } from "@/lib/safe-redirect";
+import { getSupabaseEnv } from "@/lib/supabase/env";
 
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url);
   const code = searchParams.get("code");
-  const redirect = searchParams.get("redirect") || "/";
+  const redirect = safeRedirectPath(searchParams.get("redirect"));
   const errorParam = searchParams.get("error");
   const errorDescription = searchParams.get("error_description");
 
@@ -25,38 +27,29 @@ export async function GET(request: Request) {
       options: CookieOptions;
     }[] = [];
 
-    const supabase = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      {
-        cookies: {
-          getAll() {
-            return parseCookieHeader(request.headers.get("Cookie") ?? "").map(
-              (cookie) => ({ name: cookie.name, value: cookie.value ?? "" })
-            );
-          },
-          setAll(cookiesToSet) {
-            cookiesToSet.forEach(({ name, value, options }) => {
-              collectedCookies.push({ name, value, options });
-            });
-          },
+    const { url, anonKey } = getSupabaseEnv();
+
+    const supabase = createServerClient(url, anonKey, {
+      cookies: {
+        getAll() {
+          return parseCookieHeader(request.headers.get("Cookie") ?? "").map(
+            (cookie) => ({ name: cookie.name, value: cookie.value ?? "" })
+          );
         },
-      }
-    );
+        setAll(cookiesToSet) {
+          cookiesToSet.forEach(({ name, value, options }) => {
+            collectedCookies.push({ name, value, options });
+          });
+        },
+      },
+    });
 
     const { data, error } =
       await supabase.auth.exchangeCodeForSession(code);
 
-    console.log(
-      "[auth/callback] exchange result:",
-      error ? `error=${error.message}` : "ok",
-      `cookies collected: ${collectedCookies.length}`,
-      `cookie names: [${collectedCookies.map((c) => c.name).join(", ")}]`
-    );
-
     if (!error && data.session) {
       const user = data.session.user;
-      let redirectTo = `${origin}${redirect}`;
+      let redirectPath = redirect;
 
       if (user) {
         const { data: profile } = await supabase
@@ -66,25 +59,22 @@ export async function GET(request: Request) {
           .maybeSingle();
 
         if (!profile?.handle) {
-          redirectTo = `${origin}/onboarding`;
+          redirectPath = "/onboarding";
         }
       }
 
       const forwardedHost = request.headers.get("x-forwarded-host");
-      if (forwardedHost && process.env.NODE_ENV !== "development") {
-        redirectTo = `https://${forwardedHost}${redirect}`;
-      }
+      const host =
+        forwardedHost && process.env.NODE_ENV !== "development"
+          ? `https://${forwardedHost.split(",")[0].trim()}`
+          : origin;
+      const redirectTo = `${host}${redirectPath}`;
 
       const response = NextResponse.redirect(redirectTo);
       for (const { name, value, options } of collectedCookies) {
         response.cookies.set(name, value, options);
       }
 
-      console.log(
-        "[auth/callback] redirect to:",
-        redirectTo,
-        `Set-Cookie count: ${response.headers.getSetCookie().length}`
-      );
       return response;
     }
 
