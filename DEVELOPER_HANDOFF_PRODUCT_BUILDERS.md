@@ -9,7 +9,7 @@ Prepared for review and debugging. Read this before diving into the codebase.
 | Item | Value |
 |---|---|
 | **Current branch** | `fix/auth` |
-| **Latest commit** | `888ceb3` — `chore: save latest auth fixes and developer handoff for review` |
+| **Latest commit** | `917ba64` — tip of `fix/auth` (auth fixes + handoff in `888ceb3`) |
 | **GitHub remote** | `https://github.com/SaharPak/productbuilders-app.git` |
 | **Open PR (auth work)** | https://github.com/SaharPak/productbuilders-app/pull/54 |
 | **Related draft PR** | https://github.com/SaharPak/productbuilders-app/pull/53 (broader Supabase/RLS fixes, not merged) |
