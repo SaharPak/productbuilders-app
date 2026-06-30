@@ -49,7 +49,7 @@ export async function updateSession(request: NextRequest) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
     url.searchParams.set("redirect", pathname);
-    return NextResponse.redirect(url);
+    return redirectWithCookies(url, supabaseResponse);
   }
 
   const isPublicAuthPath = PUBLIC_PATHS.some((p) => pathname.startsWith(p));
@@ -63,9 +63,25 @@ export async function updateSession(request: NextRequest) {
     if (!profile?.handle) {
       const url = request.nextUrl.clone();
       url.pathname = "/onboarding";
-      return NextResponse.redirect(url);
+      return redirectWithCookies(url, supabaseResponse);
     }
   }
 
   return supabaseResponse;
+}
+
+/**
+ * Issue a NextResponse.redirect while forwarding any auth cookies that
+ * `setAll` attached to `supabaseResponse` during this request. Without this,
+ * a session refresh inside `getUser()` would be silently discarded on any
+ * redirect (e.g. anonymous user hits /settings, or signed-in user without a
+ * handle visits /), causing the very next request to repeat the refresh —
+ * and in the worst case, the user appears to "lose" their session.
+ */
+function redirectWithCookies(url: URL, source: NextResponse): NextResponse {
+  const response = NextResponse.redirect(url);
+  for (const cookie of source.cookies.getAll()) {
+    response.cookies.set(cookie);
+  }
+  return response;
 }

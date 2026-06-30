@@ -47,6 +47,15 @@ export async function GET(request: Request) {
     const { data, error } =
       await supabase.auth.exchangeCodeForSession(code);
 
+    if (error) {
+      console.error(
+        "[auth/callback] Code exchange failed:",
+        error.message,
+        "status:",
+        error.status
+      );
+    }
+
     if (!error && data.session) {
       const user = data.session.user;
       let redirectPath = redirect;
@@ -77,11 +86,6 @@ export async function GET(request: Request) {
 
       return response;
     }
-
-    console.error(
-      "[auth/callback] Code exchange failed:",
-      error?.message ?? "no session returned"
-    );
   }
 
   return NextResponse.redirect(`${origin}/login?error=auth`);
