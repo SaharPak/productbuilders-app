@@ -1,0 +1,58 @@
+// Cloudflare Workers config for Product Builders.
+//
+// This project uses OpenNext (https://opennext.js.org/cloudflare) which
+// deploys the Next.js app to a single Worker. The build output is produced
+// by `opennextjs-cloudflare build` (npm run cf:build) and the deploy
+// command runs `opennextjs-cloudflare deploy` (npm run deploy).
+//
+// Notes for the owner:
+// - `name` MUST match the Workers project name in the Cloudflare dashboard.
+// - `compatibility_date` should be set to a recent stable date. Update it
+//   when bumping the worker runtime.
+// - `vars` here are build-time *public* values. Anything sensitive
+//   (SUPABASE_SERVICE_ROLE_KEY, CRON_SECRET) MUST be set via
+//   `wrangler secret put <NAME>` or in the Cloudflare dashboard.
+// - The repo only configures a single Worker. Cron Triggers are scoped
+//   out of this PR — see "Cron triggers" below.
+
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "main": ".open-next/worker.js",
+  "name": "productbuilders-app",
+  "compatibility_date": "2025-03-01",
+  "compatibility_flags": ["nodejs_compat"],
+  "assets": {
+    "directory": ".open-next/assets",
+    "binding": "ASSETS"
+  },
+  "services": [
+    {
+      "binding": "WORKER_SELF_REFERENCE",
+      "service": "productbuilders-app"
+    }
+  ],
+  // Public vars. Owner must fill these in via `wrangler vars set <NAME>`
+  // or the Cloudflare dashboard. Empty strings here are intentional —
+  // the app already reads them from env and warns at startup if missing.
+  "vars": {
+    "NEXT_PUBLIC_SUPABASE_URL": "",
+    "NEXT_PUBLIC_SUPABASE_ANON_KEY": "",
+    "NEXT_PUBLIC_SITE_URL": "https://productbuilders.app"
+  }
+  //
+  // Cron triggers (DEFERRED):
+  //
+  // The platform previously used `vercel.json` to schedule
+  // GET /api/cron/demo-day. OpenNext Cloudflare targets a single Worker
+  // entry that handles HTTP only — there is no built-in `scheduled`
+  // export in the OpenNext worker, so this PR does NOT add
+  // `[triggers].crons` here.
+  //
+  // For now, demo-day snapshots still run via one of:
+  //   - the Admin panel "Take snapshot now" button (calls the route handler)
+  //   - an authenticated curl against /api/cron/demo-day (OPERATIONS.md Option B)
+  //   - Supabase SQL (OPERATIONS.md Option D)
+  //
+  // A follow-up PR can add a Workers `scheduled` export via OpenNext's
+  // customization hooks if automated cron becomes a hard requirement.
+}

@@ -1,0 +1,17 @@
+# Local development secrets for Wrangler (`wrangler dev` / OpenNext preview).
+# Wrangler reads this file automatically when present; do NOT commit a
+# real .dev.vars file (it is gitignored).
+#
+# Copy to .dev.vars and fill in real values. Never commit .dev.vars.
+
+NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
+NEXT_PUBLIC_SITE_URL=http://localhost:3000
+
+# Service-role key and cron secret are kept in plain var slots here so
+# local `wrangler dev` / `opennextjs-cloudflare preview` can run. For
+# real environments, put SUPABASE_SERVICE_ROLE_KEY and CRON_SECRET behind
+# `wrangler secret put <NAME>` or the Cloudflare dashboard so they are
+# encrypted at rest.
+SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
+CRON_SECRET=your-cron-secret

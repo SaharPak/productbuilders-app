@@ -20,6 +20,13 @@
 # opennext / cloudflare build output
 /.open-next/
 
+# wrangler local state (preview deploys, dev mode scratch)
+/.wrangler/
+
+# wrangler dev / opennextjs-cloudflare preview local secrets (real values).
+# Use .dev.vars.example as a template; never commit .dev.vars.
+.dev.vars
+
 # production
 /build
 
