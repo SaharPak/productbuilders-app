@@ -108,6 +108,38 @@ The previous code did not log the Supabase code-exchange failure mode at all on 
 
 **Fix:** consolidated to a single error log that captures `error.message` and `error.status` only — no tokens, codes, cookies, or env values. The bare-redirect-on-error path is gone (the explicit `return` covers it now).
 
+### 4. Auth callback trusted `x-forwarded-host` blindly (added on `fix/auth-end-to-end-product`)
+
+The original production branch read `x-forwarded-host` to build the post-login redirect host. This is spoofable: an attacker can set `x-forwarded-host: evil.com` on a forged request and have the callback redirect a freshly-authenticated user to `https://evil.com/...`. Even though session cookies are set first, the redirect target itself is attacker-controlled.
+
+**Fix:** added `getSafeRedirectOrigin(request)` in `src/app/auth/callback/route.ts`. It picks the redirect origin from a strict priority order:
+
+1. `NEXT_PUBLIC_SITE_URL` — owner-configured, validated as `http(s):` URL.
+2. Request origin in development.
+3. Request origin in production (a sane fallback; the request URL on Cloudflare Pages is the external URL the browser sent).
+
+`x-forwarded-host` is **never** consulted. If `NEXT_PUBLIC_SITE_URL` is unset in production, the callback logs a one-shot warning and falls back to the request origin. Owner must set `NEXT_PUBLIC_SITE_URL` per environment to make the redirect host deterministic and not request-shape-dependent.
+
+The path part is still validated by `safeRedirectPath()` so the destination cannot be `//evil.com`, `https://evil.com`, etc.
+
+### 4. Auth callback trusted `x-forwarded-host` blindly (added on `fix/auth-end-to-end-product`)
+
+The original production branch read `x-forwarded-host` to build the post-login redirect host. This is spoofable: an attacker can set `x-forwarded-host: evil.com` on a forged request and have the callback redirect a freshly-authenticated user to `https://evil.com/...`. Even though session cookies are set first, the redirect target itself is attacker-controlled.
+
+**Fix:** added `getSafeRedirectOrigin(request)` in `src/app/auth/callback/route.ts`. It picks the redirect origin from a strict priority order:
+
+1. `NEXT_PUBLIC_SITE_URL` — owner-configured, validated as `http(s):` URL.
+2. Request origin in development.
+3. Request origin in production (a sane fallback; the request URL on Cloudflare Pages is the external URL the browser sent).
+
+`x-forwarded-host` is **never** consulted. If `NEXT_PUBLIC_SITE_URL` is unset in production, the callback logs a one-shot warning and falls back to the request origin. Owner must set `NEXT_PUBLIC_SITE_URL` per environment to make the redirect host deterministic and not request-shape-dependent.
+
+The path part is still validated by `safeRedirectPath()` so the destination cannot be `//evil.com`, `https://evil.com`, etc.
+
+The previous code did not log the Supabase code-exchange failure mode at all on the second error path (the "no session returned" fallback). The first error path was correct. This made it impossible to distinguish "Google didn't send a code" from "Supabase rejected the code" from "exchange succeeded but no session" without staring at network traces.
+
+**Fix:** consolidated to a single error log that captures `error.message` and `error.status` only — no tokens, codes, cookies, or env values. The bare-redirect-on-error path is gone (the explicit `return` covers it now).
+
 ### What was NOT broken
 
 - The PKCE flow itself — `signInWithOtp` and `signInWithOAuth` both succeed at the API level when invoked with the exact login-page options (`hasError: false`, valid response).
@@ -124,9 +156,9 @@ The previous code did not log the Supabase code-exchange failure mode at all on 
 |---|---|
 | `src/lib/supabase/middleware.ts` | `redirectWithCookies` helper; both redirect sites use it. |
 | `src/app/onboarding/actions.ts` | `update` → `upsert` with `onConflict: "id"`. |
-| `src/app/auth/callback/route.ts` | Consolidated error logging — `error.message` + `error.status` only, no tokens/cookies/codes. Removed redundant second error path. |
+| `src/app/auth/callback/route.ts` | Consolidated error logging — `error.message` + `error.status` only, no tokens/cookies/codes. Removed redundant second error path. Host selection hardened via `getSafeRedirectOrigin` (uses `NEXT_PUBLIC_SITE_URL`, never trusts `x-forwarded-host`). |
 | `docs/AUTH_DEBUGGING_HANDOFF.md` | This document. |
-| `scripts/auth-smoke.sh` | Read-only smoke test: route status, protected-route redirects, callback redirects. |
+| `scripts/auth-smoke.sh` | Read-only smoke test: route status, protected-route redirects, callback redirects. BASE_URL-safe — works against localhost, production, and Cloudflare preview URLs. |
 
 ---
 
@@ -141,7 +173,7 @@ The previous code did not log the Supabase code-exchange failure mode at all on 
 5. Supabase validates the Google auth code, then 302s the browser to the app's `redirectTo` with `?code=...`.
 6. Browser hits `/auth/callback?code=...`.
 7. Callback calls `exchangeCodeForSession(code)`. PKCE verifier is in the cookies the browser sent.
-8. On success, callback sets the Supabase auth cookies on the redirect response, then redirects to `redirect` (or `/onboarding` if no `profile.handle`).
+8. On success, callback picks a safe redirect origin via `getSafeRedirectOrigin(request)` — `NEXT_PUBLIC_SITE_URL` if set, else request origin in dev, else request origin in prod. It does **not** read `x-forwarded-host`. It then sets the Supabase auth cookies on the redirect response and redirects to `<safe-origin><redirectPath>` (where `redirectPath` is the `redirect` query, or `/onboarding` if no `profile.handle`).
 9. Proxy on the next request sees the session, sees no handle → redirects to `/onboarding` (still carrying the cookies).
 10. Onboarding form submits → `upsert` writes the handle → `router.push("/")`.
 11. Proxy on `/` sees the session and the handle → passes through.
@@ -166,6 +198,8 @@ npm --version
 cp .env.example .env.local
 # Fill in NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY from
 # your Supabase project (Project Settings → API).
+# NEXT_PUBLIC_SITE_URL is optional in dev (request origin is used), but
+# must be set in production (e.g. https://productbuilders.app).
 # SUPABASE_SERVICE_ROLE_KEY and CRON_SECRET are only needed for the cron.
 ```
 
@@ -307,10 +341,13 @@ Set in **Cloudflare Pages → Settings → Environment variables**, per environm
 |---|---|---|
 | `NEXT_PUBLIC_SUPABASE_URL` | Public | injected at build time |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Public | injected at build time |
+| `NEXT_PUBLIC_SITE_URL` | Public | e.g. `https://productbuilders.app`. **Required in production.** Used by the auth callback to build the post-login redirect host. The callback deliberately does not trust `x-forwarded-host`. |
 | `SUPABASE_SERVICE_ROLE_KEY` | Secret | only the cron handler reads it |
 | `CRON_SECRET` | Secret | bearer token for `/api/cron/demo-day` |
 
 Never commit any of these. Use `wrangler secret put <NAME>` (Secrets) or the Cloudflare dashboard; the public vars go under **Variables** with no type / "Plaintext".
+
+For preview environments, set `NEXT_PUBLIC_SITE_URL` to the preview URL (e.g. `https://fix-auth-end-to-end-product.<project>.pages.dev`).
 
 ### K. Local variables for Cloudflare dev (`wrangler dev` / preview)
 
@@ -359,7 +396,12 @@ For the cron, click "Take snapshot now" in `/admin` (requires admin role on `pro
 2. **Dashboard config drift.** If any of A–H above is wrong on the deployed project, real-user sign-in will fail even though the code is correct. The owner must verify.
 3. **Migrations 004–006 from draft PR #53** are not on this branch. If the production DB still lacks `demo_type`, `problem`, `audience` columns, the submit form's `safePayload` fallback will silently drop them. The proper fix is to apply migrations 002 (and any of 004–006 needed). The owner must decide.
 4. **The `handle_new_user` trigger may or may not be present** in the live DB. The onboarding `upsert` covers the gap, but if it's missing, the navbar's first `getUser` call after sign-up will see a missing profile row (it's handled with the `data ?? { ...defaults }` pattern, so the UI doesn't crash, but the avatar/handle will be empty until onboarding completes).
-5. **`x-forwarded-host` host sniffing.** The callback uses `x-forwarded-host` for the host only when `NODE_ENV !== "development"`. Cloudflare sets `x-forwarded-host` to the original request host; the callback uses `.split(",")[0].trim()`. If the production host changes (custom domain swap, Pages preview domain), verify the redirect target matches.
+5. **`x-forwarded-host` host sniffing (resolved on this branch).** The callback previously trusted `x-forwarded-host` in production, which is spoofable. Now the callback picks the post-login redirect host from a strict priority order:
+   1. `NEXT_PUBLIC_SITE_URL` (owner-configured; treated as authoritative if present and a valid `http(s):` URL).
+   2. Request origin in development.
+   3. Request origin in production (a sane fallback when `NEXT_PUBLIC_SITE_URL` is unset — the request URL on Cloudflare Pages is the external URL the browser sent).
+
+   `x-forwarded-host` is **never** consulted. If `NEXT_PUBLIC_SITE_URL` is unset in production, the callback logs a one-shot warning at module load and falls back to the request origin. Owner must set `NEXT_PUBLIC_SITE_URL` per environment.
 6. **No automated tests.** The repo has no `npm test` script. The smoke script is bash + curl; it doesn't exercise the React components or the upsert behavior. Future work: add a Playwright suite for the auth flow.
 
 ---

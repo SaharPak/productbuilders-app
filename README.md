@@ -74,6 +74,7 @@ Fill in the values from your Supabase project settings:
 - `NEXT_PUBLIC_SUPABASE_URL`: your project URL
 - `NEXT_PUBLIC_SUPABASE_ANON_KEY`: the anon/public key
 - `SUPABASE_SERVICE_ROLE_KEY`: the service_role key (used by the cron job)
+- `NEXT_PUBLIC_SITE_URL`: the canonical origin of the deployed app (e.g. `https://productbuilders.app`). Used by the auth callback to build the post-login redirect host. **Required in production.** The callback deliberately does not trust `x-forwarded-host`.
 - `CRON_SECRET`: generate with `openssl rand -base64 32`
 
 The service role key and cron secret are server-only. Never commit them or expose them to the browser.
@@ -138,6 +139,7 @@ In the Cloudflare dashboard for the Pages project, set:
 
 - `NEXT_PUBLIC_SUPABASE_URL`
 - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+- `NEXT_PUBLIC_SITE_URL` (e.g. `https://productbuilders.app`) — **required in production** so the auth callback can build a trusted post-login redirect host
 - `SUPABASE_SERVICE_ROLE_KEY` (used by `/api/cron/demo-day`)
 - `CRON_SECRET` (used by `/api/cron/demo-day`)
 
