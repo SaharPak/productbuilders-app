@@ -23,8 +23,10 @@ export async function updateProfile(displayName: string, handle: string) {
 
   const { error } = await supabase
     .from("profiles")
-    .update({ display_name: displayName, handle })
-    .eq("id", user.id);
+    .upsert(
+      { id: user.id, display_name: displayName, handle },
+      { onConflict: "id" }
+    );
 
   if (error) {
     if (error.message.includes("duplicate") || error.message.includes("unique")) {

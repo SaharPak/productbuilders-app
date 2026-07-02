@@ -36,8 +36,7 @@ async function getProduct(id: string): Promise<ProductPageData> {
     .single();
   const product = data as ProductWithCounts | null;
 
-  const { data: { session } } = await supabase.auth.getSession();
-  const user = session?.user ?? null;
+  const { data: { user } } = await supabase.auth.getUser();
 
   let userHasVoted = false;
   if (user) {
