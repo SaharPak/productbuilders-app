@@ -102,40 +102,39 @@ After creating your first account, grab your user UUID from the Supabase Auth da
 
 ## Deploy to Cloudflare
 
-The deployment target is **Cloudflare Pages** (via OpenNext). The repo currently has scaffolding (`.open-next/`, `.wrangler/`) but no `wrangler.toml` yet — see `OPERATIONS.md` for the full setup checklist.
+The deployment target is **Cloudflare Workers** via OpenNext (`@opennextjs/cloudflare`). It is **not** a Cloudflare Pages project — OpenNext compiles the Next.js app into a single Worker entry.
+
+> **Deploy blocker:** `@opennextjs/cloudflare` 1.20.1 does not yet support Next.js 16's `proxy.ts` convention (which this project uses). `npm run cf:build` fails with "Node.js middleware is not currently supported. Consider switching to Edge Middleware." until the upstream fix lands (opennextjs-cloudflare#1280). Track the PR or watch the repo. `wrangler.jsonc`, `open-next.config.ts`, and the deploy scripts are already in place so the deploy command will work as soon as upstream lands.
 
 ### 1. Install the OpenNext Cloudflare adapter
 
+Already installed (devDependencies):
+
 ```bash
-npm install --save-dev @opennextjs/cloudflare
+npm install --save-dev @opennextjs/cloudflare wrangler
 ```
 
-This adds the build tooling required to produce a Cloudflare-compatible output from `next build`.
+### 2. `wrangler.jsonc`
 
-### 2. Add a `wrangler.toml`
+A `wrangler.jsonc` template ships at the project root. Fill in:
 
-A template lives in `OPERATIONS.md` ("Cloudflare setup" section) — copy it to `wrangler.toml` and fill in:
+- `name` — your Cloudflare Workers project name
+- `compatibility_date` — a recent stable date
+- `compatibility_flags` — `["nodejs_compat"]` (already set)
+- `vars` — `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `NEXT_PUBLIC_SITE_URL`
+- Secrets (`SUPABASE_SERVICE_ROLE_KEY`, `CRON_SECRET`) — set via `wrangler secret put <NAME>` or in the Cloudflare dashboard, not in this file.
 
-- `name` — your Cloudflare Pages project name
-- `compatibility_date`
-- `compatibility_flags` — typically `["nodejs_compat"]`
-- `pages_build_output_dir` — point at the OpenNext build output
+### 3. Build & deploy
 
-### 3. Add the build script
-
-In `package.json`, add:
-
-```json
-"scripts": {
-  "preview": "opennextjs-cloudflare build && opennextjs-cloudflare preview",
-  "deploy": "opennextjs-cloudflare build && opennextjs-cloudflare deploy",
-  "cf-typegen": "wrangler types --env-interface CloudflareEnv cloudflare-env.d.ts"
-}
+```bash
+npm run cf:build      # OpenNext build → .open-next/worker.js
+npm run preview       # OpenNext build + local preview server (wrangler)
+npm run deploy        # OpenNext build + push to Cloudflare Workers
 ```
 
 ### 4. Configure environment variables
 
-In the Cloudflare dashboard for the Pages project, set:
+In the Cloudflare dashboard for the Workers project, set:
 
 - `NEXT_PUBLIC_SUPABASE_URL`
 - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
@@ -143,7 +142,7 @@ In the Cloudflare dashboard for the Pages project, set:
 - `SUPABASE_SERVICE_ROLE_KEY` (used by `/api/cron/demo-day`)
 - `CRON_SECRET` (used by `/api/cron/demo-day`)
 
-See `OPERATIONS.md` for the exact locations and for the cron-trigger configuration that replaces `vercel.json`.
+See `OPERATIONS.md` for the exact locations and for the cron-trigger guidance (HTTP-only today; no `scheduled` export wired up).
 
 ## Project structure
 
