@@ -3,6 +3,7 @@
 **Date:** 2026-07-02
 **Branch:** `fix/auth-end-to-end-product`
 **Working tree:** clean, lint + build pass
+**Deployment target:** Cloudflare (Pages via OpenNext)
 **Owner action required:** yes — see "Dashboard checklist" below
 
 ---
@@ -25,7 +26,7 @@ The owner reported authentication as the main blocker: sign-in was failing or lo
 | Auth + DB | Supabase (`@supabase/ssr` 0.10.3, `@supabase/supabase-js` 2.105.4) |
 | Runtime | React 19.2.4 |
 | Styling | Tailwind v4 |
-| Deployment | Vercel (with a weekly cron) |
+| Deployment | Cloudflare Pages via OpenNext (weekly cron via Cloudflare Cron Triggers) |
 | Package manager | npm (lockfile present, no pnpm/yarn/bun) |
 
 ### Routes
@@ -267,9 +268,53 @@ If `handle_new_user` is missing in the live database, the onboarding `upsert` is
 
 Create the **public** bucket named `product-images` (Project Settings → Storage → New bucket). This is required for product submission image uploads.
 
-### G. (Production) Vercel environment
+### G. Supabase Auth → URL Configuration (for Cloudflare)
 
-`NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, and `CRON_SECRET` must all be set in the Vercel project settings for the deployed environment.
+| Setting | Local value | Cloudflare production value | Cloudflare preview value |
+|---|---|---|---|
+| Site URL | `http://localhost:3000` | `https://productbuilders.app` (Owner must confirm) | `https://<branch>.<pages-project>.pages.dev` (Owner must confirm) |
+| Additional Redirect URLs | `http://localhost:3000/auth/callback` | `https://productbuilders.app/auth/callback` (Owner must confirm) | `https://<branch>.<pages-project>.pages.dev/auth/callback` (Owner must confirm) |
+
+If `http://localhost:3000` is missing from local, the local OAuth round-trip will fail with `redirect_uri_mismatch`.
+
+### H. Google Cloud Console — Authorized JavaScript origins and redirect URI (for Cloudflare)
+
+| Field | Local value | Cloudflare production value | Cloudflare preview value |
+|---|---|---|---|
+| Authorized JavaScript origins | `http://localhost:3000` | `https://productbuilders.app` (Owner must confirm) | `https://<branch>.<pages-project>.pages.dev` (Owner must confirm) |
+| Authorized redirect URIs | `https://<ref>.supabase.co/auth/v1/callback` | same (Supabase, not Cloudflare) | same |
+
+`<ref>` is the Supabase project ref (visible in Project Settings → API). The redirect URI here is **Supabase's**, never the app's `/auth/callback`. Google returns to Supabase first, then Supabase redirects to the app callback URL.
+
+### I. Cloudflare Pages project
+
+| Item | Value | Notes |
+|---|---|---|
+| Project name | `productbuilders-app` (Owner must confirm) | Used for `<project>.pages.dev` preview URLs |
+| Production domain | `https://productbuilders.app` (Owner must confirm) | Custom domain attached in Cloudflare |
+| Build command | `npm run build` (default; switch to OpenNext for deploys — see `OPERATIONS.md`) | Owner must confirm |
+| Output directory | `.next` for `next build`, `.open-next/dist` for OpenNext | Owner must confirm |
+| Compatibility flags | `nodejs_compat` | Needed for `@supabase/ssr` + `next/headers cookies()` in middleware |
+| Compatibility date | latest stable | Owner must confirm |
+| Function logs | Settings → Functions → Logs | Real-time logs from auth callback and cron handler |
+| Cron Triggers | Configured in `wrangler.toml` under `[triggers] crons = ["30 11 * * 5"]` | Replaces `vercel.json` cron |
+
+### J. Cloudflare environment variables
+
+Set in **Cloudflare Pages → Settings → Environment variables**, per environment (Production and Preview):
+
+| Variable | Visibility | Notes |
+|---|---|---|
+| `NEXT_PUBLIC_SUPABASE_URL` | Public | injected at build time |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Public | injected at build time |
+| `SUPABASE_SERVICE_ROLE_KEY` | Secret | only the cron handler reads it |
+| `CRON_SECRET` | Secret | bearer token for `/api/cron/demo-day` |
+
+Never commit any of these. Use `wrangler secret put <NAME>` (Secrets) or the Cloudflare dashboard; the public vars go under **Variables** with no type / "Plaintext".
+
+### K. Local variables for Cloudflare dev (`wrangler dev` / preview)
+
+`.dev.vars` (gitignored) holds Secrets for local `wrangler dev`. The repo's `.gitignore` does not currently list `.dev.vars` — Owner must add it before adding one, or use a local-only filename.
 
 ---
 
@@ -280,32 +325,52 @@ Create the **public** bucket named `product-images` (Project Settings → Storag
 | `npm install` | Pass (no new deps added on this branch) |
 | `npm run lint` | **Pass** |
 | `npm run build` | **Pass** — 14 routes, all routes built, no TS errors |
-| `scripts/auth-smoke.sh` | **Pass** — all probed routes return expected status codes |
+| `scripts/auth-smoke.sh` | **Pass** — all probed routes return expected status codes (16/16) |
 | `GET /auth/callback?code=&redirect=/` | 307 → `/login?error=auth` (correct) |
 | `GET /auth/callback?error=access_denied` | 307 → `/login?error=access_denied` (correct) |
 | `signInWithOAuth` probe (anon client, exact login-page options) | Returns Supabase authorize URL, no error |
 
+Cloudflare-specific commands (`wrangler pages dev`, `npm run pages:build`, `npm run deploy:preview`, `wrangler deploy --dry-run`) are **not** run from this session — the `@opennextjs/cloudflare` adapter and `wrangler.toml` are not yet installed/configured. See `OPERATIONS.md` for the install steps. Until those are in place, the Cloudflare build path is not exercised locally.
+
 Manual browser-based end-to-end (Google OAuth + magic link) is **not** run from this session because the project owner is the only one with the Google test account and inbox access. The smoke script exercises every code path that doesn't require a real user session.
+
+## Production / Cloudflare manual test steps
+
+After Cloudflare Pages is configured and `fix/auth-end-to-end-product` is deployed to a preview environment:
+
+1. Open the preview URL (e.g. `https://fix-auth-end-to-end-product.<pages-project>.pages.dev`).
+2. Click **Sign in** → `/login`.
+3. Click **Continue with Google**. Sign in with the test Google account.
+4. Watch the Cloudflare Function logs (Pages → Logs → Real-time logs) for the `GET /auth/callback?code=...` request.
+5. Confirm the redirect lands on `/onboarding` (new user) or `redirect` target (returning user).
+6. Submit display name + handle.
+7. Refresh `/`. You should remain signed in.
+8. Click avatar → **Log out**. You should land on `/`.
+
+For the magic-link path, repeat with the email form. Watch the Function logs for `GET /auth/callback?code=...`.
+
+For the cron, click "Take snapshot now" in `/admin` (requires admin role on `profiles.is_admin`).
 
 ---
 
 ## Remaining risks
 
-1. **Dashboard config drift.** If any of A–D above is wrong on the deployed project, real-user sign-in will fail even though the code is correct. The owner must verify.
-2. **Migrations 004–006 from draft PR #53** are not on this branch. If the production DB still lacks `demo_type`, `problem`, `audience` columns, the submit form's `safePayload` fallback will silently drop them. The proper fix is to apply migrations 002 (and any of 004–006 needed). The owner must decide.
-3. **The `handle_new_user` trigger may or may not be present** in the live DB. The onboarding `upsert` covers the gap, but if it's missing, the navbar's first `getUser` call after sign-up will see a missing profile row (it's handled with the `data ?? { ...defaults }` pattern, so the UI doesn't crash, but the avatar/handle will be empty until onboarding completes).
-4. **`x-forwarded-host` host sniffing.** The callback uses `x-forwarded-host` for the host only when `NODE_ENV !== "development"`. If the production host header changes (e.g. Cloudflare in front of Vercel), the callback redirect target may need updating.
-5. **No automated tests.** The repo has no `npm test` script. The smoke script is bash + curl; it doesn't exercise the React components or the upsert behavior. Future work: add a Playwright suite for the auth flow.
+1. **Cloudflare deployment not yet configured.** No `wrangler.toml`, no `@opennextjs/cloudflare` adapter installed, no Cloudflare Pages project created. The code is ready; the deployment target is set up by the owner per `OPERATIONS.md`.
+2. **Dashboard config drift.** If any of A–H above is wrong on the deployed project, real-user sign-in will fail even though the code is correct. The owner must verify.
+3. **Migrations 004–006 from draft PR #53** are not on this branch. If the production DB still lacks `demo_type`, `problem`, `audience` columns, the submit form's `safePayload` fallback will silently drop them. The proper fix is to apply migrations 002 (and any of 004–006 needed). The owner must decide.
+4. **The `handle_new_user` trigger may or may not be present** in the live DB. The onboarding `upsert` covers the gap, but if it's missing, the navbar's first `getUser` call after sign-up will see a missing profile row (it's handled with the `data ?? { ...defaults }` pattern, so the UI doesn't crash, but the avatar/handle will be empty until onboarding completes).
+5. **`x-forwarded-host` host sniffing.** The callback uses `x-forwarded-host` for the host only when `NODE_ENV !== "development"`. Cloudflare sets `x-forwarded-host` to the original request host; the callback uses `.split(",")[0].trim()`. If the production host changes (custom domain swap, Pages preview domain), verify the redirect target matches.
+6. **No automated tests.** The repo has no `npm test` script. The smoke script is bash + curl; it doesn't exercise the React components or the upsert behavior. Future work: add a Playwright suite for the auth flow.
 
 ---
 
 ## Next 5 recommended tasks (priority order)
 
-1. **Owner: verify Supabase dashboard settings A–D above against the deployed project.** This is the single highest-impact action.
-2. **Owner: run migrations 001–003 in the Supabase SQL editor** (idempotent; safe to re-run). Verify the `handle_new_user` trigger is present (`select * from pg_trigger where tgname = 'on_auth_user_created';`).
-3. **Add Playwright smoke tests** that drive `/login` → Google OAuth in a controlled test account → `/onboarding` → `/submit`. This is the only way to catch regressions in the browser-side auth state without manual QA.
-4. **Apply PR #53's migrations 004–006** if image upload RLS / week cycle fixes are still needed. Decide whether to merge PR #53, fold its changes into `fix/auth`, or rebase.
-5. **Add a Sign in with GitHub (or Apple) provider** to give non-Google users a path. Currently only Google OAuth + email magic link are supported.
+1. **Owner: configure Cloudflare Pages deployment.** Install `@opennextjs/cloudflare`, create `wrangler.toml` from the template in `OPERATIONS.md`, create the Pages project, attach the production domain, set the four required env vars (two public at build time, two secret).
+2. **Owner: verify Supabase dashboard settings A–H above against the deployed project.** This is the single highest-impact action.
+3. **Owner: run migrations 001–003 in the Supabase SQL editor** (idempotent; safe to re-run). Verify the `handle_new_user` trigger is present (`select * from pg_trigger where tgname = 'on_auth_user_created';`).
+4. **Add Playwright smoke tests** that drive `/login` → Google OAuth in a controlled test account → `/onboarding` → `/submit`. This is the only way to catch regressions in the browser-side auth state without manual QA.
+5. **Apply PR #53's migrations 004–006** if image upload RLS / week cycle fixes are still needed. Decide whether to merge PR #53, fold its changes into `fix/auth`, or rebase.
 
 ---
 

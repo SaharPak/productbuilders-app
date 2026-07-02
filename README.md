@@ -36,7 +36,7 @@ Builders choose one of two paths when they submit:
 - **Database, Auth, Storage:** Supabase (Postgres, Row Level Security, Auth, Storage)
 - **Styling:** Tailwind CSS v4
 - **Fonts:** Fraunces (display), Manrope (body), JetBrains Mono (metadata)
-- **Deployment:** Vercel (with a weekly cron job)
+- **Deployment:** Cloudflare (via OpenNext on Cloudflare Pages)
 
 ## Local setup
 
@@ -99,14 +99,49 @@ After creating your first account, grab your user UUID from the Supabase Auth da
 - `npm run start`: serve the production build
 - `npm run lint`: run ESLint
 
-## Deploy to Vercel
+## Deploy to Cloudflare
 
-1. Push to GitHub.
-2. Import the repo in Vercel.
-3. Add the environment variables from `.env.example`.
-4. Deploy.
+The deployment target is **Cloudflare Pages** (via OpenNext). The repo currently has scaffolding (`.open-next/`, `.wrangler/`) but no `wrangler.toml` yet — see `OPERATIONS.md` for the full setup checklist.
 
-`vercel.json` configures a cron job that runs every Friday at 11:30 UTC (14:30 Helsinki) to snapshot the week's top 3 demo-day winners. See the operations guide for manual trigger options and admin tasks.
+### 1. Install the OpenNext Cloudflare adapter
+
+```bash
+npm install --save-dev @opennextjs/cloudflare
+```
+
+This adds the build tooling required to produce a Cloudflare-compatible output from `next build`.
+
+### 2. Add a `wrangler.toml`
+
+A template lives in `OPERATIONS.md` ("Cloudflare setup" section) — copy it to `wrangler.toml` and fill in:
+
+- `name` — your Cloudflare Pages project name
+- `compatibility_date`
+- `compatibility_flags` — typically `["nodejs_compat"]`
+- `pages_build_output_dir` — point at the OpenNext build output
+
+### 3. Add the build script
+
+In `package.json`, add:
+
+```json
+"scripts": {
+  "preview": "opennextjs-cloudflare build && opennextjs-cloudflare preview",
+  "deploy": "opennextjs-cloudflare build && opennextjs-cloudflare deploy",
+  "cf-typegen": "wrangler types --env-interface CloudflareEnv cloudflare-env.d.ts"
+}
+```
+
+### 4. Configure environment variables
+
+In the Cloudflare dashboard for the Pages project, set:
+
+- `NEXT_PUBLIC_SUPABASE_URL`
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+- `SUPABASE_SERVICE_ROLE_KEY` (used by `/api/cron/demo-day`)
+- `CRON_SECRET` (used by `/api/cron/demo-day`)
+
+See `OPERATIONS.md` for the exact locations and for the cron-trigger configuration that replaces `vercel.json`.
 
 ## Project structure
 

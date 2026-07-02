@@ -42,7 +42,7 @@ Prepared for review and debugging. Read this before diving into the codebase.
 
 The owner has been stuck on auth for 2–3 weeks. Symptoms reported in recent debugging sessions:
 
-1. **Sign-in appears to fail or loop** on production (Cloudflare/Vercel behind proxy).
+1. **Sign-in appears to fail or loop** on production (Cloudflare behind proxy).
 2. **New users may skip onboarding** or get stuck without a handle.
 3. **Session may not persist** after proxy redirects (login → protected route, or home → onboarding redirect).
 
@@ -164,7 +164,8 @@ If `NEXT_PUBLIC_SUPABASE_URL` is missing or contains `placeholder`/`example`, th
 
 | File | Why |
 |---|---|
-| `vercel.json` | Vercel cron config |
+| `wrangler.toml` (to be added by owner) | Cloudflare Pages / Workers config |
+| `OPERATIONS.md` | Weekly cron + admin tasks (Cloudflare Cron Triggers) |
 | `README.md` | Setup and project structure |
 
 ---
@@ -186,7 +187,7 @@ If auth "works once then fails", inspect whether cookies are present on redirect
 
 ### Production proxy headers
 
-On production, `x-forwarded-host` may be comma-separated. Callback uses `.split(",")[0].trim()`. Verify this matches the actual deployment host (Vercel vs Cloudflare history — README says Vercel; older commits mention Cloudflare Workers migration).
+On production, `x-forwarded-host` may be comma-separated. Callback uses `.split(",")[0].trim()`. Verify this matches the actual Cloudflare deployment host. Older commits in the project history mention a Vercel/Cloudflare migration — the current target is **Cloudflare** (via OpenNext).
 
 ### Profile creation
 
